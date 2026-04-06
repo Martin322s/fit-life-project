@@ -1,44 +1,52 @@
 import type { JSX } from "react";
 import Logo from "./Logo";
+import { Link } from "react-router-dom";
 
-function Navbar(): JSX.Element {
+type NavbarProps = {
+    theme: "dark" | "light";
+    onToggleTheme: () => void;
+};
+
+function Navbar({ theme, onToggleTheme }: NavbarProps): JSX.Element {
     return (
         <nav className="navbar" id="navbar">
             <div className="container">
                 <Logo />
                 <ul className="navbar-links">
                     <li>
-                        <a href="index-v2.html" className="navbar-link active">
+                        <Link to="/" className="navbar-link active">
                             Начало
-                        </a>
+                        </Link>
                     </li>
                     <li>
-                        <a href="about.html" className="navbar-link">
+                        <Link to="/about" className="navbar-link">
                             За нас
-                        </a>
+                        </Link>
                     </li>
                     <li>
-                        <a href="faq.html" className="navbar-link">
+                        <Link to="/faq" className="navbar-link">
                             FAQ
-                        </a>
+                        </Link>
                     </li>
                     <li>
-                        <a href="contact.html" className="navbar-link">
+                        <Link to="/contact" className="navbar-link">
                             Контакти
-                        </a>
+                        </Link>
                     </li>
                 </ul>
                 <div className="navbar-actions">
-                    <a href="login.html" className="btn-secondary btn-sm">
+                    <Link to="/login" className="btn-secondary btn-sm">
                         Вход
-                    </a>
-                    <a href="register.html" className="btn-primary btn-sm">
+                    </Link>
+                    <Link to="/register" className="btn-primary btn-sm">
                         Започни безплатно
-                    </a>
+                    </Link>
                     <button
                         className="theme-toggle"
-                        id="themeToggle"
+                        type="button"
                         aria-label="Toggle theme"
+                        aria-pressed={theme === "light"}
+                        onClick={onToggleTheme}
                     >
                         <span className="theme-toggle-icon-dark">🌙</span>
                         <span className="theme-toggle-icon-light">☀️</span>
