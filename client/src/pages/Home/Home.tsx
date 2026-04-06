@@ -1,9 +1,9 @@
 import type { JSX } from "react";
-import HeroSection from "../../components/HomeSections/HeroSection";
-import FeaturesSection from "../../components/HomeSections/FeaturesSection";
-import HowItWorksSection from "../../components/HomeSections/HowItWorksSection";
-import TestimonialsSection from "../../components/HomeSections/TestimonialsSection";
-import CTABanner from "../../components/HomeSections/CTABannerSection";
+import HeroSection from "./sections/Hero";
+import FeaturesSection from "./sections/Features";
+import HowItWorksSection from "./sections/HowItWorks";
+import TestimonialsSection from "./sections/Testimonials";
+import CTABanner from "./sections/CTABanner";
 
 function Home(): JSX.Element {
     return (
