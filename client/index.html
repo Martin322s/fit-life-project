@@ -13,6 +13,13 @@
 <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <script>
+        (function () {
+            const saved = localStorage.getItem('fitlife-theme');
+            if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        })();
+    </script>
 </body>
 
 </html>
