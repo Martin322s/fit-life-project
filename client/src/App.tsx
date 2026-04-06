@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
-import MobileNavbar from "./layout/Navbar/MobileNavBar";
+import MobileNavbar from "./layout/Navbar/MobileNavbar";
 import Navbar from "./layout/Navbar/Navbar";
 import Home from "./pages/Home/Home";
-import Footer from "./layout/Footer";
+import Footer from "./layout/Footer/Footer";
 
 type Theme = "dark" | "light";
 
