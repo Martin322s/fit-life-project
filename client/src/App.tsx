@@ -4,6 +4,7 @@ import MobileNavbar from "./layout/Navbar/MobileNavbar";
 import Navbar from "./layout/Navbar/Navbar";
 import Home from "./pages/Home/Home";
 import Footer from "./layout/Footer/Footer";
+import About from "./pages/About/About";
 
 type Theme = "dark" | "light";
 
@@ -38,6 +39,7 @@ function App() {
             <div className="page-wrapper">
                 <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/about/" element={<About />} />
                 </Routes>
             </div>
 
