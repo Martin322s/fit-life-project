@@ -3,7 +3,7 @@ import HeroSection from "./sections/Hero";
 import FeaturesSection from "./sections/Features";
 import HowItWorksSection from "./sections/HowItWorks";
 import TestimonialsSection from "./sections/Testimonials";
-import CTABanner from "./sections/CTABanner";
+import CTABanner from "../../components/CTABanner";
 
 function Home(): JSX.Element {
     return (
