@@ -1,11 +1,12 @@
 import type { JSX } from "react";
+import { Link } from "react-router-dom";
 
 function Hero(): JSX.Element {
     return (
         <section className="about-hero">
             <div className="container">
                 <div className="page-hero-breadcrumb">
-                    <a href="index-v2.html">Начало</a>
+                    <Link to="/">Начало</Link>
                     <span>›</span>
                     <span style={{ color: "var(--color-cream)" }}>За нас</span>
                 </div>
