@@ -6,6 +6,7 @@ import About from "./pages/About/About";
 import Faq from "./pages/Faq/Faq";
 import Contact from "./pages/Contact/Contact";
 import Login from "./pages/Login/Login";
+import Register from "./pages/Register/Register";
 
 type Theme = "dark" | "light";
 
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/contact/" element={<Contact />} />
             </Route>
             <Route path="/login/" element={<Login theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/register/" element={<Register theme={theme} onToggleTheme={toggleTheme} />} />
         </Routes>
     );
 }

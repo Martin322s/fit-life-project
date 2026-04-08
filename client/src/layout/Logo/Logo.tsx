@@ -1,13 +1,14 @@
 import type { JSX } from "react";
+import { Link } from "react-router-dom";
 
 function Logo(): JSX.Element {
     return (
-        <a href="index-v2.html" className="navbar-logo">
+        <Link to="/" className="navbar-logo">
             <div className="navbar-logo-icon">⚡</div>
             <span className="navbar-logo-text">
                 Fit<span>Life</span>
             </span>
-        </a>
+        </Link>
     )
 }
 
