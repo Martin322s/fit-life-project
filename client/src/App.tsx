@@ -5,6 +5,7 @@ import Navbar from "./layout/Navbar/Navbar";
 import Home from "./pages/Home/Home";
 import Footer from "./layout/Footer/Footer";
 import About from "./pages/About/About";
+import Faq from "./pages/Faq/Faq";
 
 type Theme = "dark" | "light";
 
@@ -40,6 +41,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/about/" element={<About />} />
+                    <Route path="/faq/" element={<Faq />} />
                 </Routes>
             </div>
 
