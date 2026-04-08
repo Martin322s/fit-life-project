@@ -7,6 +7,9 @@ import Faq from "./pages/Faq/Faq";
 import Contact from "./pages/Contact/Contact";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
+import Privacy from "./pages/Privacy/Privacy";
+import Terms from "./pages/Terms/Terms";
+import Cookies from "./pages/Cookies/Cookies";
 
 type Theme = "dark" | "light";
 
@@ -40,6 +43,9 @@ function App() {
                 <Route path="/about/" element={<About />} />
                 <Route path="/faq/" element={<Faq />} />
                 <Route path="/contact/" element={<Contact />} />
+                <Route path="/privacy/" element={<Privacy />} />
+                <Route path="/terms/" element={<Terms />} />
+                <Route path="/cookies/" element={<Cookies />} />
             </Route>
             <Route path="/login/" element={<Login theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/register/" element={<Register theme={theme} onToggleTheme={toggleTheme} />} />
