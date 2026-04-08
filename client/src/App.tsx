@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
-import MobileNavbar from "./layout/Navbar/MobileNavbar";
-import Navbar from "./layout/Navbar/Navbar";
+import MainLayout from "./layout/MainLayout";
 import Home from "./pages/Home/Home";
-import Footer from "./layout/Footer/Footer";
 import About from "./pages/About/About";
 import Faq from "./pages/Faq/Faq";
 import Contact from "./pages/Contact/Contact";
+import Login from "./pages/Login/Login";
 
 type Theme = "dark" | "light";
 
@@ -34,21 +33,15 @@ function App() {
     };
 
     return (
-        <>
-            <Navbar theme={theme} onToggleTheme={toggleTheme} />
-            <MobileNavbar />
-
-            <div className="page-wrapper">
-                <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/about/" element={<About />} />
-                    <Route path="/faq/" element={<Faq />} />
-                    <Route path="/contact/" element={<Contact />} />
-                </Routes>
-            </div>
-
-            <Footer />
-        </>
+        <Routes>
+            <Route element={<MainLayout theme={theme} onToggleTheme={toggleTheme} />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/about/" element={<About />} />
+                <Route path="/faq/" element={<Faq />} />
+                <Route path="/contact/" element={<Contact />} />
+            </Route>
+            <Route path="/login/" element={<Login theme={theme} onToggleTheme={toggleTheme} />} />
+        </Routes>
     );
 }
 
