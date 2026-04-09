@@ -21,6 +21,9 @@ function MobileNavbar({ isOpen, onClose }: MobileNavbarProps): JSX.Element {
             <Link to="/contact" className="navbar-mobile-link" onClick={onClose}>
                 Контакти
             </Link>
+            <Link to="/dashboard" className="navbar-mobile-link" onClick={onClose}>
+                Табло
+            </Link>
             <Link to="/login" className="btn-secondary btn-full" style={{ textAlign: "center", marginTop: 16 }} onClick={onClose}>
                 Вход
             </Link>

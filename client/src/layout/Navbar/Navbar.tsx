@@ -35,6 +35,11 @@ function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps)
                             Контакти
                         </NavLink>
                     </li>
+                    <li>
+                        <NavLink to="/dashboard" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
+                            Табло
+                        </NavLink>
+                    </li>
                 </ul>
                 <div className="navbar-actions">
                     <Link to="/login" className="btn-secondary btn-sm">
