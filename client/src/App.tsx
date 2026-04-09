@@ -10,6 +10,7 @@ import Register from "./pages/Register/Register";
 import Privacy from "./pages/Privacy/Privacy";
 import Terms from "./pages/Terms/Terms";
 import Cookies from "./pages/Cookies/Cookies";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 
 type Theme = "dark" | "light";
 
@@ -49,6 +50,7 @@ function App() {
             </Route>
             <Route path="/login" element={<Login theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/register" element={<Register theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/forgot-password" element={<ForgotPassword theme={theme} onToggleTheme={toggleTheme} />} />
         </Routes>
     );
 }
