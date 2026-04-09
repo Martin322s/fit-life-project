@@ -38,6 +38,15 @@ function IcBook(): JSX.Element {
         </svg>
     );
 }
+function IcApple(): JSX.Element {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 8c-2.2-2.8-6.4-1.8-7.3 2-.7 2.8.6 6.2 2.5 8.2 1.3 1.3 2.8 1.9 4.2 1 .4-.3 1-.3 1.4 0 1.6.9 3 .3 4.3-1 1.8-2 3.1-5.4 2.4-8.2-.9-3.8-5-4.8-7.5-2Z" />
+            <path d="M12.9 3.2c.3 1.6-.6 3.2-2.3 4 .1-1.6 1-3.1 2.3-4Z" />
+            <path d="M14.9 4c.9-.5 1.8-.7 2.8-.5" />
+        </svg>
+    );
+}
 function IcCalc(): JSX.Element {
     return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -45,6 +54,45 @@ function IcCalc(): JSX.Element {
             <line x1="8" y1="6" x2="16" y2="6" /><line x1="8" y1="10" x2="16" y2="10" />
             <line x1="8" y1="14" x2="11" y2="14" /><line x1="8" y1="18" x2="11" y2="18" />
             <line x1="13" y1="14" x2="16" y2="14" /><line x1="13" y1="18" x2="16" y2="18" />
+        </svg>
+    );
+}
+function IcDumbbell(): JSX.Element {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2.5 10.5v3" /><path d="M5.5 9v6" /><path d="M8.5 8v8" />
+            <path d="M15.5 8v8" /><path d="M18.5 9v6" /><path d="M21.5 10.5v3" />
+            <path d="M8.5 12h7" />
+        </svg>
+    );
+}
+function IcBox(): JSX.Element {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 7.5 12 3l9 4.5" />
+            <path d="M3 7.5V16.5L12 21l9-4.5V7.5" />
+            <path d="M3 7.5 12 12l9-4.5" />
+            <path d="M12 12v9" />
+        </svg>
+    );
+}
+function IcCart(): JSX.Element {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="19.5" r="1.5" />
+            <circle cx="17.5" cy="19.5" r="1.5" />
+            <path d="M3 4h2.5l1.7 8.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.7L20 7H7" />
+        </svg>
+    );
+}
+function IcTrophy(): JSX.Element {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 21h8" />
+            <path d="M12 17v4" />
+            <path d="M8 4h8v2.5A4.5 4.5 0 0 1 11.5 11h-1A4.5 4.5 0 0 1 6 6.5V4h2Z" />
+            <path d="M8 5H4.5A2.5 2.5 0 0 0 7 9.5h1" />
+            <path d="M16 5h3.5A2.5 2.5 0 0 1 17 9.5h-1" />
         </svg>
     );
 }
@@ -77,9 +125,14 @@ type NavItemCfg = { icon: JSX.Element; label: string; to: string; soon?: boolean
 
 const PRIMARY_NAV: NavItemCfg[] = [
     { icon: <IcGrid />, label: "Табло", to: "/dashboard" },
-    { icon: <IcFire />, label: "Калории", to: "/calories", soon: true },
+    { icon: <IcFire />, label: "Калории", to: "/calories" },
     { icon: <IcTrend />, label: "Тегло", to: "/weight", soon: true },
     { icon: <IcBook />, label: "Рецепти", to: "/recipes", soon: true },
+    { icon: <IcApple />, label: "Диети", to: "/diets", soon: true },
+    { icon: <IcDumbbell />, label: "Тренировъчни планове", to: "/training-plans", soon: true },
+    { icon: <IcBox />, label: "Продукти", to: "/products", soon: true },
+    { icon: <IcCart />, label: "Магазин", to: "/shop", soon: true },
+    { icon: <IcTrophy />, label: "Предизвикателства", to: "/challenges", soon: true },
     { icon: <IcCalc />, label: "Калкулатори", to: "/calculators", soon: true },
 ];
 
@@ -93,13 +146,13 @@ function SideNavItem({ item, onClick }: { item: NavItemCfg; onClick?: () => void
         return (
             <div style={{
                 display: "flex", alignItems: "center", gap: "var(--sp-3)",
-                padding: "10px var(--sp-3)", borderRadius: "var(--r-md)",
+                padding: "10px 14px 10px 18px", borderRadius: "var(--r-md)",
                 fontSize: "0.875rem", fontWeight: 500,
                 color: "var(--c-text-secondary, #7A8FA3)", opacity: 0.45, cursor: "not-allowed",
             }}>
-                {item.icon}
-                <span style={{ flex: 1 }}>{item.label}</span>
-                <span style={{ fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.08em", padding: "2px 5px", borderRadius: "var(--r-full)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.25)" }}>СКОРО</span>
+                <span style={{ width: 18, minWidth: 18, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>{item.label}</span>
+                <span style={{ flexShrink: 0, marginLeft: "var(--sp-2)", fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.08em", padding: "2px 5px", borderRadius: "var(--r-full)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.25)" }}>СКОРО</span>
             </div>
         );
     }
@@ -110,17 +163,17 @@ function SideNavItem({ item, onClick }: { item: NavItemCfg; onClick?: () => void
             onClick={onClick}
             style={({ isActive }) => ({
                 display: "flex", alignItems: "center", gap: "var(--sp-3)",
-                padding: "10px var(--sp-3)", borderRadius: "var(--r-md)",
+                padding: "10px 14px 10px 18px", borderRadius: "var(--r-md)",
                 fontSize: "0.875rem", fontWeight: 500,
                 textDecoration: "none", transition: "var(--t-base)",
                 color: isActive ? "var(--c-electric, #0066FF)" : "var(--c-text-secondary, #7A8FA3)",
                 background: isActive ? "rgba(0,102,255,0.1)" : "transparent",
                 borderLeft: isActive ? "2px solid var(--c-electric, #0066FF)" : "2px solid transparent",
-                paddingLeft: isActive ? "calc(var(--sp-3) - 2px)" : "var(--sp-3)",
+                paddingLeft: isActive ? "16px" : "18px",
             })}
         >
-            {item.icon}
-            <span>{item.label}</span>
+            <span style={{ width: 18, minWidth: 18, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</span>
+            <span style={{ minWidth: 0, lineHeight: 1.25 }}>{item.label}</span>
         </NavLink>
     );
 }
@@ -130,7 +183,7 @@ function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () =
         <aside
             className={`dash-sidebar${isOpen ? " dash-sidebar--open" : ""}`}
             style={{
-                width: 220, minWidth: 220,
+                width: 292, minWidth: 292,
                 background: "var(--c-surface-1, #0E1318)",
                 borderRight: "1px solid var(--c-border, rgba(255,255,255,0.06))",
                 display: "flex", flexDirection: "column",

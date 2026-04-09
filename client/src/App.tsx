@@ -12,6 +12,7 @@ import Terms from "./pages/Terms/Terms";
 import Cookies from "./pages/Cookies/Cookies";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import Calories from "./pages/Calories/Calories";
 
 type Theme = "dark" | "light";
 
@@ -53,6 +54,7 @@ function App() {
             <Route path="/register" element={<Register theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/forgot-password" element={<ForgotPassword theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/dashboard" element={<Dashboard theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/calories" element={<Calories theme={theme} onToggleTheme={toggleTheme} />} />
         </Routes>
     );
 }
