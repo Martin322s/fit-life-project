@@ -1,37 +1,39 @@
 import type { JSX } from "react";
 import Logo from "../Logo/Logo";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 type NavbarProps = {
     theme: "dark" | "light";
     onToggleTheme: () => void;
+    isMenuOpen: boolean;
+    onToggleMenu: () => void;
 };
 
-function Navbar({ theme, onToggleTheme }: NavbarProps): JSX.Element {
+function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps): JSX.Element {
     return (
         <nav className="navbar" id="navbar">
             <div className="container">
                 <Logo />
                 <ul className="navbar-links">
                     <li>
-                        <Link to="/" className="navbar-link active">
+                        <NavLink to="/" end className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
                             Начало
-                        </Link>
+                        </NavLink>
                     </li>
                     <li>
-                        <Link to="/about" className="navbar-link">
+                        <NavLink to="/about" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
                             За нас
-                        </Link>
+                        </NavLink>
                     </li>
                     <li>
-                        <Link to="/faq" className="navbar-link">
+                        <NavLink to="/faq" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
                             FAQ
-                        </Link>
+                        </NavLink>
                     </li>
                     <li>
-                        <Link to="/contact" className="navbar-link">
+                        <NavLink to="/contact" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
                             Контакти
-                        </Link>
+                        </NavLink>
                     </li>
                 </ul>
                 <div className="navbar-actions">
@@ -52,7 +54,14 @@ function Navbar({ theme, onToggleTheme }: NavbarProps): JSX.Element {
                         <span className="theme-toggle-icon-light">☀️</span>
                     </button>
                 </div>
-                <button className="navbar-hamburger" id="hamburger" aria-label="Меню">
+                <button
+                    className={`navbar-hamburger${isMenuOpen ? " open" : ""}`}
+                    id="hamburger"
+                    aria-label="Меню"
+                    aria-expanded={isMenuOpen}
+                    type="button"
+                    onClick={onToggleMenu}
+                >
                     <span />
                     <span />
                     <span />

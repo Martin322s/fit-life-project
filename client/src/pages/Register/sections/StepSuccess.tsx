@@ -84,7 +84,7 @@ function StepSuccess({ results }: StepSuccessProps): JSX.Element {
                 ))}
             </div>
 
-            <Link to="/dashboard" className="btn-primary btn-full btn-lg" style={{ textDecoration: "none" }}>
+            <Link to="/" className="btn-primary btn-full btn-lg" style={{ textDecoration: "none" }}>
                 Към таблото ми
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
                     <path d="M5 12h14M12 5l7 7-7 7" />

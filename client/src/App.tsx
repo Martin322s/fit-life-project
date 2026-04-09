@@ -40,15 +40,15 @@ function App() {
         <Routes>
             <Route element={<MainLayout theme={theme} onToggleTheme={toggleTheme} />}>
                 <Route path="/" element={<Home />} />
-                <Route path="/about/" element={<About />} />
-                <Route path="/faq/" element={<Faq />} />
-                <Route path="/contact/" element={<Contact />} />
-                <Route path="/privacy/" element={<Privacy />} />
-                <Route path="/terms/" element={<Terms />} />
-                <Route path="/cookies/" element={<Cookies />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/faq" element={<Faq />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/cookies" element={<Cookies />} />
             </Route>
-            <Route path="/login/" element={<Login theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/register/" element={<Register theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/login" element={<Login theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/register" element={<Register theme={theme} onToggleTheme={toggleTheme} />} />
         </Routes>
     );
 }

@@ -36,7 +36,7 @@ function HeroSection(): JSX.Element {
                                 </svg>
                                 Стартирай безплатно
                             </Link>
-                            <Link to="/how-it-works" className="btn-secondary btn-lg">
+                            <a href="#how-it-works" className="btn-secondary btn-lg">
                                 Как работи?
                                 <svg
                                     width={16}
@@ -48,7 +48,7 @@ function HeroSection(): JSX.Element {
                                 >
                                     <path d="M9 18l6-6-6-6" />
                                 </svg>
-                            </Link>
+                            </a>
                         </div>
                         <div className="hero-stats">
                             <div>
