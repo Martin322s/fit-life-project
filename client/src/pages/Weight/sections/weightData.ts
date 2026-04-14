@@ -1,0 +1,90 @@
+export const WEIGHT_DATA = {
+    user: { initials: "МИ", streak: 12 },
+    stats: {
+        current: 84.2,
+        goal: 78.0,
+        start: 92.5,
+        height: 179, // cm
+        unit: "кг",
+        startDate: "01.01.2026",
+        goalDate: "01.09.2026",
+        lastLogged: "Днес, 08:20",
+        bmi: 26.3,
+        bmiStart: 28.9,
+        bmiGoal: 24.3,
+    },
+    insights: {
+        weeklyAvgLoss: 0.56,   // kg/week
+        totalLost: 8.3,         // kg
+        remaining: 6.2,         // kg to goal
+        percentComplete: 57,    // %
+        projectedDate: "Юли 2026",
+        daysAheadOfSchedule: 38, // days ahead
+        bestWeek: 1.1,           // kg in single week
+        consistencyPct: 82,      // % days logged
+    },
+    measurements: [
+        { label: "Талия",        current: 88,   start: 94,   goal: 82,   unit: "см", icon: "📏" },
+        { label: "Гърди",        current: 102,  start: 105,  goal: 99,   unit: "см", icon: "📏" },
+        { label: "Ханш",         current: 96,   start: 100,  goal: 92,   unit: "см", icon: "📏" },
+        { label: "Бицепс",       current: 34,   start: 33,   goal: 35,   unit: "см", icon: "💪" },
+    ],
+    // Full 90-day chart data — realistic downward trend with natural fluctuations
+    chartData: [
+        { label: "01.01", weight: 92.5 },
+        { label: "04.01", weight: 92.1 },
+        { label: "08.01", weight: 91.8 },
+        { label: "12.01", weight: 91.3 },
+        { label: "15.01", weight: 91.6 },
+        { label: "19.01", weight: 91.0 },
+        { label: "22.01", weight: 90.6 },
+        { label: "26.01", weight: 90.2 },
+        { label: "29.01", weight: 89.8 },
+        { label: "02.02", weight: 89.4 },
+        { label: "06.02", weight: 89.0 },
+        { label: "10.02", weight: 88.6 },
+        { label: "14.02", weight: 88.2 },
+        { label: "18.02", weight: 88.0 },
+        { label: "22.02", weight: 87.5 },
+        { label: "26.02", weight: 87.1 },
+        { label: "01.03", weight: 86.8 },
+        { label: "05.03", weight: 86.5 },
+        { label: "09.03", weight: 86.1 },
+        { label: "13.03", weight: 85.8 },
+        { label: "17.03", weight: 85.5 },
+        { label: "21.03", weight: 85.2 },
+        { label: "25.03", weight: 85.0 },
+        { label: "29.03", weight: 85.4 }, // weekend bump
+        { label: "02.04", weight: 85.1 },
+        { label: "05.04", weight: 84.8 },
+        { label: "09.04", weight: 84.5 },
+        { label: "11.04", weight: 84.5 },
+        { label: "13.04", weight: 84.2 },
+    ],
+    // 10 most recent entries for history log
+    recentEntries: [
+        { date: "13.04", day: "Пон", weight: 84.2, change: -0.3, note: "Сутринта след събуждане" },
+        { date: "11.04", day: "Съб", weight: 84.5, change: 0.0,  note: "" },
+        { date: "09.04", day: "Чет", weight: 84.5, change: -0.3, note: "" },
+        { date: "07.04", day: "Вт",  weight: 84.8, change: -0.3, note: "След почивен ден" },
+        { date: "05.04", day: "Нед", weight: 85.1, change: -0.2, note: "" },
+        { date: "03.04", day: "Пет", weight: 85.3, change: +0.2, note: "Повишен прием натрий" },
+        { date: "01.04", day: "Ср",  weight: 85.1, change: -0.3, note: "" },
+        { date: "29.03", day: "Съб", weight: 85.4, change: +0.4, note: "Уикенд" },
+        { date: "27.03", day: "Чет", weight: 85.0, change: -0.2, note: "" },
+        { date: "25.03", day: "Вт",  weight: 85.2, change: -0.3, note: "" },
+    ],
+    // 35-day consistency grid (5 weeks × 7 days), most recent = last entry
+    consistencyGrid: [
+        // Week 1 (oldest)
+        { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  },
+        // Week 2
+        { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  },
+        // Week 3
+        { logged: true  }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: true  },
+        // Week 4
+        { logged: false }, { logged: true  }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  },
+        // Week 5 (most recent)
+        { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  },
+    ],
+};
