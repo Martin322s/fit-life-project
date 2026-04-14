@@ -14,10 +14,8 @@ export default function CaloriesHeader({ onToggleSidebar, onAddFood }: CaloriesH
                     </svg>
                 </button>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                    <h1 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, color: "var(--color-cream)", lineHeight: 1.15, margin: 0 }}>Калории и хранене</h1>
-                    <div className="body-sm text-gray" style={{ marginTop: 2, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {today}
-                    </div>
+                    <h1 className="cal-title">Калории и хранене</h1>
+                    <div className="cal-header-sub body-sm text-gray">{today}</div>
                 </div>
             </div>
             <div className="cal-header-right">
