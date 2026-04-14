@@ -126,7 +126,7 @@ type NavItemCfg = { icon: JSX.Element; label: string; to: string; soon?: boolean
 const PRIMARY_NAV: NavItemCfg[] = [
     { icon: <IcGrid />, label: "Табло", to: "/dashboard" },
     { icon: <IcFire />, label: "Калории", to: "/calories" },
-    { icon: <IcTrend />, label: "Тегло", to: "/weight", soon: true },
+    { icon: <IcTrend />, label: "Тегло", to: "/weight" },
     { icon: <IcBook />, label: "Рецепти", to: "/recipes", soon: true },
     { icon: <IcApple />, label: "Диети", to: "/diets", soon: true },
     { icon: <IcDumbbell />, label: "Тренировъчни планове", to: "/training-plans", soon: true },
