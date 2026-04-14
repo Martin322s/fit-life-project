@@ -28,6 +28,8 @@ const CALORIES_CSS = `
 .cal-header-right { display: flex; align-items: center; gap: var(--sp-3); flex-shrink: 0; }
 .cal-streak { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-full); background: rgba(200,255,0,0.08); border: 1px solid rgba(200,255,0,0.2); }
 .cal-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,var(--c-electric,#0066FF),var(--c-acid,#C8FF00)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 0.8rem; font-weight: 700; color: var(--c-bg,#080C10); flex-shrink: 0; }
+.cal-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--color-cream); line-height: 1.15; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-header-sub { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize; }
 .cal-hamburger { display: none; }
 .cal-top-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); }
 .cal-hero-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: var(--sp-4); }
@@ -65,6 +67,8 @@ const CALORIES_CSS = `
   .cal-header { padding: var(--sp-3) var(--sp-4); }
   .cal-content { padding: var(--sp-3) var(--sp-4); }
   .cal-top-grid { grid-template-columns: 1fr 1fr; }
+  .cal-title { font-size: 1rem !important; }
+  .cal-header-sub { display: none; }
   .cal-streak { display: none; }
   .cal-avatar { display: none; }
   .cal-energy-inner { grid-template-columns: 1fr; }
