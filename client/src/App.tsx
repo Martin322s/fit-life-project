@@ -16,6 +16,7 @@ import Calories from "./pages/Calories/Calories";
 import Weight from "./pages/Weight/Weight";
 import Recipes from "./pages/Recipes/Recipes";
 import Diets from "./pages/Diets/Diets";
+import TrainingPlans from "./pages/TrainingPlans/TrainingPlans";
 
 type Theme = "dark" | "light";
 
@@ -61,6 +62,7 @@ function App() {
             <Route path="/weight" element={<Weight theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/recipes" element={<Recipes theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/diets" element={<Diets theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/training-plans" element={<TrainingPlans theme={theme} onToggleTheme={toggleTheme} />} />
         </Routes>
     );
 }
