@@ -130,7 +130,7 @@ const PRIMARY_NAV: NavItemCfg[] = [
     { icon: <IcBook />, label: "Рецепти", to: "/recipes" },
     { icon: <IcApple />, label: "Диети", to: "/diets" },
     { icon: <IcDumbbell />, label: "Тренировъчни планове", to: "/training-plans" },
-    { icon: <IcBox />, label: "Продукти", to: "/products", soon: true },
+    { icon: <IcBox />, label: "Продукти", to: "/products" },
     { icon: <IcCart />, label: "Магазин", to: "/shop", soon: true },
     { icon: <IcTrophy />, label: "Предизвикателства", to: "/challenges", soon: true },
     { icon: <IcCalc />, label: "Калкулатори", to: "/calculators", soon: true },
