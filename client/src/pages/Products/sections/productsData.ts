@@ -1,0 +1,267 @@
+export type NutritionPer100 = {
+    calories: number;
+    protein: number;
+    carbs: number;
+    sugar: number;
+    fat: number;
+    saturated: number;
+    fiber: number;
+    sodium: number; // mg
+};
+
+export type Product = {
+    id: string;
+    name: string;
+    brand: string;
+    category: string;
+    servingG: number;
+    per100: NutritionPer100;
+    tags: string[];
+    icon: string;
+    favorite: boolean;
+    barcode?: string;
+};
+
+export const CATEGORIES = [
+    { key: "all",      label: "Всички",       icon: "🔍" },
+    { key: "protein",  label: "Протеини",      icon: "💪" },
+    { key: "dairy",    label: "Млечни",        icon: "🥛" },
+    { key: "grain",    label: "Зърнени",       icon: "🌾" },
+    { key: "meat",     label: "Месо & Риба",   icon: "🥩" },
+    { key: "vegetable",label: "Зеленчуци",     icon: "🥦" },
+    { key: "fruit",    label: "Плодове",       icon: "🍎" },
+    { key: "fat",      label: "Мазнини",       icon: "🥑" },
+    { key: "snack",    label: "Снакове",       icon: "🍫" },
+    { key: "drink",    label: "Напитки",       icon: "🧃" },
+];
+
+export const PRODUCTS: Product[] = [
+    {
+        id: "chicken-breast",
+        name: "Пилешко гърди",
+        brand: "Пресни продукти",
+        category: "meat",
+        servingG: 150,
+        per100: { calories: 165, protein: 31, carbs: 0, sugar: 0, fat: 3.6, saturated: 1, fiber: 0, sodium: 74 },
+        tags: ["висок протеин", "нискомаслено", "без глутен"],
+        icon: "🍗",
+        favorite: true,
+    },
+    {
+        id: "greek-yogurt",
+        name: "Гръцко кисело мляко 0%",
+        brand: "Olympus",
+        category: "dairy",
+        servingG: 200,
+        per100: { calories: 57, protein: 10, carbs: 4, sugar: 4, fat: 0.2, saturated: 0.1, fiber: 0, sodium: 46 },
+        tags: ["висок протеин", "нискомаслено", "пробиотик"],
+        icon: "🥛",
+        favorite: true,
+    },
+    {
+        id: "oats",
+        name: "Овесени ядки",
+        brand: "Quaker",
+        category: "grain",
+        servingG: 80,
+        per100: { calories: 379, protein: 13, carbs: 67, sugar: 1, fat: 6.9, saturated: 1.2, fiber: 10, sodium: 2 },
+        tags: ["фибри", "бавни въглехидрати", "веган"],
+        icon: "🌾",
+        favorite: true,
+    },
+    {
+        id: "salmon",
+        name: "Атлантическа сьомга",
+        brand: "Пресни продукти",
+        category: "meat",
+        servingG: 180,
+        per100: { calories: 208, protein: 20, carbs: 0, sugar: 0, fat: 13, saturated: 3.1, fiber: 0, sodium: 59 },
+        tags: ["омега-3", "висок протеин", "без глутен"],
+        icon: "🐟",
+        favorite: false,
+    },
+    {
+        id: "whey-protein",
+        name: "Суроватъчен протеин",
+        brand: "Optimum Nutrition",
+        category: "protein",
+        servingG: 30,
+        per100: { calories: 380, protein: 80, carbs: 7, sugar: 5, fat: 5, saturated: 2, fiber: 0, sodium: 190 },
+        tags: ["висок протеин", "след тренировка", "бързо усвояване"],
+        icon: "💪",
+        favorite: true,
+    },
+    {
+        id: "egg",
+        name: "Яйце (цяло)",
+        brand: "Пресни продукти",
+        category: "protein",
+        servingG: 60,
+        per100: { calories: 155, protein: 13, carbs: 1.1, sugar: 1.1, fat: 11, saturated: 3.3, fiber: 0, sodium: 124 },
+        tags: ["пълноценен протеин", "витамини"],
+        icon: "🥚",
+        favorite: false,
+    },
+    {
+        id: "avocado",
+        name: "Авокадо",
+        brand: "Пресни продукти",
+        category: "fat",
+        servingG: 100,
+        per100: { calories: 160, protein: 2, carbs: 9, sugar: 0.7, fat: 15, saturated: 2.1, fiber: 7, sodium: 7 },
+        tags: ["здравословни мазнини", "фибри", "веган"],
+        icon: "🥑",
+        favorite: false,
+    },
+    {
+        id: "brown-rice",
+        name: "Кафяв ориз (варен)",
+        brand: "Panda",
+        category: "grain",
+        servingG: 200,
+        per100: { calories: 111, protein: 2.6, carbs: 23, sugar: 0.4, fat: 0.9, saturated: 0.2, fiber: 1.8, sodium: 5 },
+        tags: ["бавни въглехидрати", "фибри", "веган"],
+        icon: "🍚",
+        favorite: false,
+    },
+    {
+        id: "broccoli",
+        name: "Броколи",
+        brand: "Пресни продукти",
+        category: "vegetable",
+        servingG: 150,
+        per100: { calories: 34, protein: 2.8, carbs: 7, sugar: 1.7, fat: 0.4, saturated: 0.1, fiber: 2.6, sodium: 33 },
+        tags: ["нискокалорично", "витамин C", "веган"],
+        icon: "🥦",
+        favorite: false,
+    },
+    {
+        id: "banana",
+        name: "Банан",
+        brand: "Пресни продукти",
+        category: "fruit",
+        servingG: 120,
+        per100: { calories: 89, protein: 1.1, carbs: 23, sugar: 12, fat: 0.3, saturated: 0.1, fiber: 2.6, sodium: 1 },
+        tags: ["бързи въглехидрати", "калий", "веган"],
+        icon: "🍌",
+        favorite: false,
+    },
+    {
+        id: "olive-oil",
+        name: "Зехтин Extra Virgin",
+        brand: "Borges",
+        category: "fat",
+        servingG: 15,
+        per100: { calories: 884, protein: 0, carbs: 0, sugar: 0, fat: 100, saturated: 14, fiber: 0, sodium: 2 },
+        tags: ["мononенаситени мазнини", "антиоксиданти", "веган"],
+        icon: "🫒",
+        favorite: true,
+    },
+    {
+        id: "cottage-cheese",
+        name: "Извара (нискомаслена)",
+        brand: "Ела",
+        category: "dairy",
+        servingG: 150,
+        per100: { calories: 72, protein: 12, carbs: 3.4, sugar: 3.4, fat: 1, saturated: 0.6, fiber: 0, sodium: 321 },
+        tags: ["висок протеин", "нискомаслено", "казеин"],
+        icon: "🧀",
+        favorite: false,
+    },
+    {
+        id: "almonds",
+        name: "Бадеми (сурови)",
+        brand: "Seeberger",
+        category: "snack",
+        servingG: 30,
+        per100: { calories: 579, protein: 21, carbs: 22, sugar: 4.4, fat: 50, saturated: 3.8, fiber: 12, sodium: 1 },
+        tags: ["здравословни мазнини", "магнезий", "веган"],
+        icon: "🥜",
+        favorite: false,
+    },
+    {
+        id: "sweet-potato",
+        name: "Сладък картоф (варен)",
+        brand: "Пресни продукти",
+        category: "vegetable",
+        servingG: 200,
+        per100: { calories: 86, protein: 1.6, carbs: 20, sugar: 4.2, fat: 0.1, saturated: 0, fiber: 3, sodium: 27 },
+        tags: ["бета-каротин", "фибри", "веган"],
+        icon: "🍠",
+        favorite: false,
+    },
+    {
+        id: "tuna-can",
+        name: "Риба тон в собствен сос",
+        brand: "Hacendado",
+        category: "meat",
+        servingG: 100,
+        per100: { calories: 103, protein: 24, carbs: 0, sugar: 0, fat: 0.9, saturated: 0.3, fiber: 0, sodium: 380 },
+        tags: ["висок протеин", "нискомаслено", "омега-3"],
+        icon: "🐟",
+        favorite: true,
+    },
+    {
+        id: "whole-milk",
+        name: "Прясно мляко 3.6%",
+        brand: "Верея",
+        category: "dairy",
+        servingG: 250,
+        per100: { calories: 61, protein: 3.2, carbs: 4.8, sugar: 4.8, fat: 3.6, saturated: 2.3, fiber: 0, sodium: 43 },
+        tags: ["калций", "витамин D"],
+        icon: "🥛",
+        favorite: false,
+    },
+    {
+        id: "dark-chocolate",
+        name: "Черен шоколад 85%",
+        brand: "Lindt",
+        category: "snack",
+        servingG: 30,
+        per100: { calories: 598, protein: 12, carbs: 33, sugar: 23, fat: 46, saturated: 28, fiber: 9, sodium: 12 },
+        tags: ["антиоксиданти", "магнезий", "умерено"],
+        icon: "🍫",
+        favorite: false,
+    },
+    {
+        id: "spinach",
+        name: "Спанак (пресен)",
+        brand: "Пресни продукти",
+        category: "vegetable",
+        servingG: 100,
+        per100: { calories: 23, protein: 2.9, carbs: 3.6, sugar: 0.4, fat: 0.4, saturated: 0.1, fiber: 2.2, sodium: 79 },
+        tags: ["желязо", "витамин K", "нискокалорично", "веган"],
+        icon: "🌿",
+        favorite: false,
+    },
+    {
+        id: "protein-bar",
+        name: "Протеинов бар",
+        brand: "Quest",
+        category: "snack",
+        servingG: 60,
+        per100: { calories: 367, protein: 38, carbs: 47, sugar: 4, fat: 8.5, saturated: 3.5, fiber: 28, sodium: 410 },
+        tags: ["висок протеин", "нискозахарен", "фибри"],
+        icon: "🍫",
+        favorite: false,
+    },
+    {
+        id: "green-tea",
+        name: "Зелен чай (запарка)",
+        brand: "Lipton",
+        category: "drink",
+        servingG: 250,
+        per100: { calories: 1, protein: 0, carbs: 0.2, sugar: 0, fat: 0, saturated: 0, fiber: 0, sodium: 0 },
+        tags: ["антиоксиданти", "метаболизъм", "веган"],
+        icon: "🍵",
+        favorite: false,
+    },
+];
+
+export const PRODUCTS_STATS = {
+    totalProducts: 3420,
+    categories: 10,
+    scannedToday: 4,
+    favorites: PRODUCTS.filter((p) => p.favorite).length,
+    recentlyViewed: ["chicken-breast", "greek-yogurt", "oats", "whey-protein"],
+};
