@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { JSX } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 type LoginFormProps = {
     theme: "dark" | "light";
@@ -8,6 +8,7 @@ type LoginFormProps = {
 };
 
 function LoginForm({ theme, onToggleTheme }: LoginFormProps): JSX.Element {
+    const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +23,24 @@ function LoginForm({ theme, onToggleTheme }: LoginFormProps): JSX.Element {
         try {
             // TODO: POST /api/auth/login → store token → navigate('/dashboard')
             await new Promise((resolve) => setTimeout(resolve, 1500));
+            const storedProfileRaw = window.localStorage.getItem("fitlife-profile");
+            const storedProfile = storedProfileRaw
+                ? (JSON.parse(storedProfileRaw) as { email?: string })
+                : null;
+
+            if (storedProfile?.email && storedProfile.email !== email) {
+                throw new Error("invalid_credentials");
+            }
+
+            window.localStorage.setItem(
+                "fitlife-auth",
+                JSON.stringify({
+                    email,
+                    rememberMe,
+                    loggedInAt: new Date().toISOString(),
+                }),
+            );
+            navigate("/dashboard");
         } catch {
             setError("Грешен имейл или парола. Опитай отново.");
         } finally {
