@@ -16,6 +16,13 @@ export default function SwitchDietModal({ onClose }: { onClose: () => void }): J
 
     function handleConfirm() {
         if (!selected || selected === DIETS_DATA.activeDiet.id) return;
+        window.localStorage.setItem(
+            "fitlife-active-diet",
+            JSON.stringify({
+                dietId: selected,
+                switchedAt: new Date().toISOString(),
+            }),
+        );
         setConfirmed(true);
         setTimeout(onClose, 1800);
     }
