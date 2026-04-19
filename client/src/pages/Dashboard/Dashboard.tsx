@@ -148,6 +148,16 @@ function LogWeightModal({ onClose }: { onClose: () => void }): JSX.Element {
         if (!weight) return;
         setStatus("loading");
         await new Promise((r) => setTimeout(r, 900));
+        const existing = window.localStorage.getItem("fitlife-weight-log");
+        const entries = existing ? (JSON.parse(existing) as Array<Record<string, unknown>>) : [];
+        entries.unshift({
+            value: Number(weight),
+            date,
+            note,
+            source: "dashboard",
+            addedAt: new Date().toISOString(),
+        });
+        window.localStorage.setItem("fitlife-weight-log", JSON.stringify(entries.slice(0, 100)));
         setStatus("success");
         setTimeout(onClose, 1400);
     };
@@ -214,6 +224,20 @@ function AddMealModal({ initialType, onClose }: { initialType: string; onClose: 
         if (!kcal) return;
         setStatus("loading");
         await new Promise((r) => setTimeout(r, 900));
+        const existing = window.localStorage.getItem("fitlife-food-log");
+        const entries = existing ? (JSON.parse(existing) as Array<Record<string, unknown>>) : [];
+        entries.unshift({
+            id: `dashboard-food-${Date.now()}`,
+            source: "dashboard",
+            mealType,
+            name: name || mealType,
+            kcal: Number(kcal) || 0,
+            protein: Number(protein) || 0,
+            carbs: Number(carbs) || 0,
+            fat: Number(fat) || 0,
+            addedAt: new Date().toISOString(),
+        });
+        window.localStorage.setItem("fitlife-food-log", JSON.stringify(entries.slice(0, 100)));
         setStatus("success");
         setTimeout(onClose, 1400);
     };
@@ -302,6 +326,15 @@ function AddWaterModal({ onClose }: { onClose: () => void }): JSX.Element {
         e.preventDefault();
         setStatus("loading");
         await new Promise((r) => setTimeout(r, 700));
+        const existing = window.localStorage.getItem("fitlife-water-log");
+        const entries = existing ? (JSON.parse(existing) as Array<Record<string, unknown>>) : [];
+        entries.unshift({
+            glasses,
+            milliliters: glasses * 250,
+            source: "dashboard",
+            addedAt: new Date().toISOString(),
+        });
+        window.localStorage.setItem("fitlife-water-log", JSON.stringify(entries.slice(0, 100)));
         setStatus("success");
         setTimeout(onClose, 1200);
     };
