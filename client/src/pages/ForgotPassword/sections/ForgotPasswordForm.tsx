@@ -18,8 +18,14 @@ function ForgotPasswordForm({ theme, onToggleTheme }: ForgotPasswordFormProps): 
         setError(null);
         setIsLoading(true);
         try {
-            // TODO: POST /api/auth/forgot-password
             await new Promise((resolve) => setTimeout(resolve, 1500));
+            window.localStorage.setItem(
+                "fitlife-password-reset-request",
+                JSON.stringify({
+                    email,
+                    requestedAt: new Date().toISOString(),
+                }),
+            );
             setSubmitted(true);
         } catch {
             setError("Нещо се обърка. Моля, опитай отново.");
