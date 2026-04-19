@@ -47,8 +47,11 @@ function ContactForm(): JSX.Element {
         e.preventDefault();
         setSubmitStatus("submitting");
         try {
-            // TODO: replace with real POST /api/contact
             await new Promise((resolve) => setTimeout(resolve, 1500));
+            const existing = window.localStorage.getItem("fitlife-contact-messages");
+            const messages = existing ? (JSON.parse(existing) as FormData[]) : [];
+            messages.push(formData);
+            window.localStorage.setItem("fitlife-contact-messages", JSON.stringify(messages));
             setSubmitStatus("success");
         } catch {
             setSubmitStatus("error");
