@@ -243,6 +243,24 @@ select {
     font-family: var(--font-body);
 }
 
+select {
+    color-scheme: dark;
+}
+
+[data-theme="light"] select {
+    color-scheme: light;
+}
+
+select option,
+select optgroup {
+    background-color: var(--c-surface-1);
+    color: var(--c-text-primary);
+}
+
+select option:disabled {
+    color: var(--c-text-secondary);
+}
+
 /* ============================================================
    THEME TOGGLE BUTTON
    Завинаги видим — в navbar до hamburger/actions
