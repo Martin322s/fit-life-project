@@ -131,14 +131,14 @@ const PRIMARY_NAV: NavItemCfg[] = [
     { icon: <IcApple />, label: "Диети", to: "/diets" },
     { icon: <IcDumbbell />, label: "Тренировъчни планове", to: "/training-plans" },
     { icon: <IcBox />, label: "Продукти", to: "/products" },
-    { icon: <IcCart />, label: "Магазин", to: "/shop", soon: true },
-    { icon: <IcTrophy />, label: "Предизвикателства", to: "/challenges", soon: true },
-    { icon: <IcCalc />, label: "Калкулатори", to: "/calculators", soon: true },
+    { icon: <IcCart />, label: "Магазин", to: "/shop" },
+    { icon: <IcTrophy />, label: "Предизвикателства", to: "/challenges" },
+    { icon: <IcCalc />, label: "Калкулатори", to: "/calculators" },
 ];
 
 const BOTTOM_NAV: NavItemCfg[] = [
-    { icon: <IcUser />, label: "Профил", to: "/profile", soon: true },
-    { icon: <IcSettings />, label: "Настройки", to: "/settings", soon: true },
+    { icon: <IcUser />, label: "Профил", to: "/profile" },
+    { icon: <IcSettings />, label: "Настройки", to: "/settings" },
 ];
 
 function SideNavItem({ item, onClick }: { item: NavItemCfg; onClick?: () => void }): JSX.Element {
