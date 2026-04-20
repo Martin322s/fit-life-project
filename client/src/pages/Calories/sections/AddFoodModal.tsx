@@ -16,6 +16,22 @@ export default function AddFoodModal({ onClose }: AddFoodModalProps): JSX.Elemen
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const existing = window.localStorage.getItem("fitlife-food-log");
+        const entries = existing ? (JSON.parse(existing) as Array<Record<string, unknown>>) : [];
+
+        entries.unshift({
+            id: `manual-food-${Date.now()}`,
+            source: "manual",
+            mealType,
+            name,
+            kcal: Number(kcal) || 0,
+            protein: Number(protein) || 0,
+            carbs: Number(carbs) || 0,
+            fat: Number(fat) || 0,
+            addedAt: new Date().toISOString(),
+        });
+
+        window.localStorage.setItem("fitlife-food-log", JSON.stringify(entries.slice(0, 100)));
         setSuccess(true);
         setTimeout(onClose, 1800);
     }
