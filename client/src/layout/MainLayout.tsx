@@ -14,7 +14,6 @@ function MainLayout({ theme, onToggleTheme }: MainLayoutProps): JSX.Element {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const location = useLocation();
 
-    // Close mobile menu on every navigation
     useEffect(() => {
         setIsMenuOpen(false);
     }, [location.pathname]);
