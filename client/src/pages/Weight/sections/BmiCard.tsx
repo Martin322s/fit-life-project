@@ -19,7 +19,7 @@ function bmiPct(bmi: number) {
 }
 
 export default function BmiCard(): JSX.Element {
-    const { bmi, bmiStart, bmiGoal, current, height } = WEIGHT_DATA.stats;
+    const { bmi, bmiStart, bmiGoal, height } = WEIGHT_DATA.stats;
     const cat = bmiCategory(bmi);
     const markerPct = bmiPct(bmi);
     const startPct = bmiPct(bmiStart);
