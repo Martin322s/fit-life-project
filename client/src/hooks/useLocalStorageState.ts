@@ -23,7 +23,6 @@ export default function useLocalStorageState<T>(key: string, initialValue: T): [
         try {
             window.localStorage.setItem(key, JSON.stringify(value));
         } catch {
-            // Ignore localStorage write failures and keep the UI responsive.
         }
     }, [key, value]);
 
