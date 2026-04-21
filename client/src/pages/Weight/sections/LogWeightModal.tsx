@@ -17,6 +17,17 @@ export default function LogWeightModal({ onClose }: LogWeightModalProps): JSX.El
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const existing = window.localStorage.getItem("fitlife-weight-log");
+        const entries = existing ? (JSON.parse(existing) as Array<Record<string, unknown>>) : [];
+
+        entries.unshift({
+            value: Number(weight),
+            date,
+            note,
+            addedAt: new Date().toISOString(),
+        });
+
+        window.localStorage.setItem("fitlife-weight-log", JSON.stringify(entries.slice(0, 100)));
         setSuccess(true);
         setTimeout(onClose, 1800);
     }
