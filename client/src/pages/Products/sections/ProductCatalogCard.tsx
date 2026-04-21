@@ -75,33 +75,37 @@ export default function ProductCatalogCard({ onSelect, selectedId }: Props): JSX
                                 key={p.id}
                                 type="button"
                                 onClick={() => onSelect(p)}
-                                style={{
-                                    display: "flex", flexDirection: "column", gap: "var(--sp-2)",
-                                    padding: "var(--sp-4)", borderRadius: "var(--r-lg)", textAlign: "left", cursor: "pointer",
-                                    background: isSelected ? "rgba(0,102,255,0.07)" : "rgba(255,255,255,0.02)",
-                                    border: `1px solid ${isSelected ? "var(--c-electric,#0066FF)" : "var(--c-border,rgba(255,255,255,0.06))"}`,
-                                    transition: "all 0.15s", width: "100%",
-                                }}
+                                className={`pd-product-card${isSelected ? " pd-product-card--selected" : ""}`}
                             >
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                    <span style={{ fontSize: "1.5rem" }}>{p.icon}</span>
+                                {/* Icon row (desktop) / icon column (mobile) */}
+                                <div className="pd-product-card-icon-row">
+                                    <span className="pd-product-card-icon">{p.icon}</span>
                                     {p.favorite && <span style={{ fontSize: "0.7rem" }}>❤️</span>}
                                 </div>
-                                <div>
+
+                                {/* Name + brand */}
+                                <div className="pd-product-card-info">
                                     <div className="body-sm" style={{ color: "var(--color-cream)", fontWeight: 700, lineHeight: 1.3 }}>{p.name}</div>
                                     <div className="label text-gray" style={{ fontSize: "0.65rem", marginTop: 2 }}>{p.brand}</div>
+                                    {/* Macro bar — shown inside info on mobile */}
+                                    <div className="pd-macro-bar-mobile" style={{ display: "flex", height: 4, borderRadius: "var(--r-full)", overflow: "hidden", gap: 1, marginTop: 6 }}>
+                                        <div style={{ flex: p.per100.carbs,   background: "var(--c-acid,#C8FF00)", opacity: 0.7 }} />
+                                        <div style={{ flex: p.per100.protein, background: "var(--c-electric,#0066FF)", opacity: 0.7 }} />
+                                        <div style={{ flex: p.per100.fat,     background: "#FFB300", opacity: 0.7 }} />
+                                    </div>
                                 </div>
 
-                                {/* Macro mini-bar */}
-                                <div style={{ display: "flex", height: 4, borderRadius: "var(--r-full)", overflow: "hidden", gap: 1 }}>
-                                    <div style={{ flex: p.per100.carbs,    background: "var(--c-acid,#C8FF00)", opacity: 0.7 }} />
-                                    <div style={{ flex: p.per100.protein,  background: "var(--c-electric,#0066FF)", opacity: 0.7 }} />
-                                    <div style={{ flex: p.per100.fat,      background: "#FFB300", opacity: 0.7 }} />
+                                {/* Macro bar — desktop only */}
+                                <div className="pd-macro-bar-desktop" style={{ display: "flex", height: 4, borderRadius: "var(--r-full)", overflow: "hidden", gap: 1 }}>
+                                    <div style={{ flex: p.per100.carbs,   background: "var(--c-acid,#C8FF00)", opacity: 0.7 }} />
+                                    <div style={{ flex: p.per100.protein, background: "var(--c-electric,#0066FF)", opacity: 0.7 }} />
+                                    <div style={{ flex: p.per100.fat,     background: "#FFB300", opacity: 0.7 }} />
                                 </div>
 
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span className="label text-gray" style={{ fontSize: "0.62rem" }}>{p.servingG}г порция</span>
-                                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                                {/* Stats row */}
+                                <div className="pd-product-card-stats">
+                                    <span className="label text-gray" style={{ fontSize: "0.62rem" }}>{p.servingG}г</span>
+                                    <div style={{ display: "flex", gap: 6 }}>
                                         <span className="label" style={{ fontSize: "0.65rem", color: "var(--c-electric,#0066FF)", fontWeight: 700 }}>{servingCal} kcal</span>
                                         <span className="label" style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)" }}>Б{servingProt}г</span>
                                     </div>
