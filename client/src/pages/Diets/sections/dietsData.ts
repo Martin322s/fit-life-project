@@ -8,7 +8,7 @@ export type DietPlan = {
     difficulty: "Лесно" | "Средно" | "Трудно";
     durationWeeks: number;
     calorieTarget: number;
-    macroSplit: { carbs: number; protein: number; fat: number }; // %
+    macroSplit: { carbs: number; protein: number; fat: number };
     tags: string[];
     expectedResults: string;
     active: boolean;
@@ -72,7 +72,6 @@ export const DIETS_DATA = {
         ],
     },
 
-    // 30-day compliance: 1=пълно, 0.5=частично, 0=не
     calendarData: [
         1, 1, 0.5, 1, 1, 0, 1,
         1, 1, 1, 0.5, 1, 1, 0,
