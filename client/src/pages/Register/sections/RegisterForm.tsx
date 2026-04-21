@@ -141,6 +141,56 @@ function RegisterForm({ theme, onToggleTheme }: RegisterFormProps): JSX.Element 
         try {
             // TODO: POST /api/auth/register → store token → navigate('/dashboard')
             await new Promise((resolve) => setTimeout(resolve, 1500));
+            window.localStorage.setItem(
+                "fitlife-profile",
+                JSON.stringify({
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    email: formData.email,
+                    age: formData.age,
+                    height: formData.height,
+                    heightUnit: formData.heightUnit,
+                    weight: formData.weight,
+                    weightUnit: formData.weightUnit,
+                    gender: formData.gender,
+                    goal: formData.goal,
+                    activity: formData.activity,
+                }),
+            );
+            window.localStorage.setItem(
+                "fitlife-profile-page",
+                JSON.stringify({
+                    name: `${formData.firstName} ${formData.lastName}`.trim(),
+                    email: formData.email,
+                    phone: "+359 88 123 4567",
+                    city: "София",
+                    age: Number(formData.age) || 29,
+                    height: Number(formData.height) || 178,
+                    weight: Number(formData.weight) || 82.4,
+                    goalWeight: formData.goal === "lose" ? Math.max(Number(formData.weight) - 5, 45) : formData.goal === "gain" ? Number(formData.weight) + 3 : Number(formData.weight),
+                    bodyFat: 18,
+                    plan: "FitLife Free",
+                    joined: new Date().toLocaleDateString("bg-BG", { month: "long", year: "numeric" }),
+                    goal: formData.goal === "lose" ? "Релеф" : formData.goal === "gain" ? "Покачване" : "Поддръжка",
+                    activity: formData.activity === "sedentary" ? "Заседнал" : formData.activity === "light" ? "Леко активен" : formData.activity === "moderate" ? "Умерено активен" : "Много активен",
+                    training: "Нов профил · без шаблон",
+                    calories: calculateResults(formData).goalCalories,
+                    protein: Math.round((Number(formData.weight) || 82) * 2),
+                    water: 2.8,
+                    streak: 1,
+                    checkins: 1,
+                    badges: 1,
+                    privacy: "Само за мен",
+                }),
+            );
+            window.localStorage.setItem(
+                "fitlife-auth",
+                JSON.stringify({
+                    email: formData.email,
+                    rememberMe: true,
+                    loggedInAt: new Date().toISOString(),
+                }),
+            );
             setResults(calculateResults(formData));
             setStep("success");
         } catch {
