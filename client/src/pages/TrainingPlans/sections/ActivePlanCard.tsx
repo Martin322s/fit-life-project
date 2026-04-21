@@ -32,7 +32,7 @@ export default function ActivePlanCard({ onSwitch }: { onSwitch: () => void }): 
                     <div style={{ display: "flex", gap: "var(--sp-2)", flexWrap: "wrap", marginBottom: 8 }}>
                         <span className="tp-pill" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>✓ Активен план</span>
                         <span className="tp-pill" style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}>Сед. {p.currentWeek}</span>
-                        <span className="tp-pill" style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}>{p.difficulty}</span>
+                        <span className="tp-pill" style={{ background: "rgba(255,255,255,0.15)", color: DIFF_COLOR[p.difficulty] ?? "#fff" }}>{p.difficulty}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
                         <span style={{ fontSize: "2rem" }}>{p.icon}</span>
