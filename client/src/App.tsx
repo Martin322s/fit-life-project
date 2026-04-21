@@ -18,6 +18,11 @@ import Recipes from "./pages/Recipes/Recipes";
 import Diets from "./pages/Diets/Diets";
 import TrainingPlans from "./pages/TrainingPlans/TrainingPlans";
 import Products from "./pages/Products/Products";
+import Shop from "./pages/Shop/Shop";
+import Challenges from "./pages/Challenges/Challenges";
+import Calculators from "./pages/Calculators/Calculators";
+import Profile from "./pages/Profile/Profile";
+import Settings from "./pages/Settings/Settings";
 
 type Theme = "dark" | "light";
 
@@ -65,6 +70,11 @@ function App() {
             <Route path="/diets" element={<Diets theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/training-plans" element={<TrainingPlans theme={theme} onToggleTheme={toggleTheme} />} />
             <Route path="/products" element={<Products theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/shop" element={<Shop theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/challenges" element={<Challenges theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/calculators" element={<Calculators theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/profile" element={<Profile theme={theme} onToggleTheme={toggleTheme} />} />
+            <Route path="/settings" element={<Settings theme={theme} onToggleTheme={toggleTheme} />} />
         </Routes>
     );
 }
