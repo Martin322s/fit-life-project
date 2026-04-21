@@ -18,6 +18,23 @@ export default function AddRecipeModal({ onClose }: AddRecipeModalProps): JSX.El
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const existing = window.localStorage.getItem("fitlife-custom-recipes");
+        const recipes = existing ? (JSON.parse(existing) as Array<Record<string, unknown>>) : [];
+
+        recipes.unshift({
+            id: `custom-recipe-${Date.now()}`,
+            category,
+            name,
+            kcal: Number(kcal) || 0,
+            protein: Number(protein) || 0,
+            carbs: Number(carbs) || 0,
+            fat: Number(fat) || 0,
+            prepTime: Number(prepTime) || 0,
+            servings: Number(servings) || 1,
+            createdAt: new Date().toISOString(),
+        });
+
+        window.localStorage.setItem("fitlife-custom-recipes", JSON.stringify(recipes.slice(0, 100)));
         setSuccess(true);
         setTimeout(onClose, 1800);
     }
