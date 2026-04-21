@@ -5,7 +5,6 @@ import DashboardSidebar from "../../layout/DashboardLayout/DashboardSidebar";
 type DashboardProps = { theme: "dark" | "light"; onToggleTheme: () => void };
 type ModalType = "weight" | "meal" | "water" | null;
 
-// ─── Responsive + dashboard CSS ───────────────────────────────
 const DASH_CSS = `
 .dash-sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
 .dash-sidebar-close { display: none !important; }
@@ -66,7 +65,6 @@ const DASH_CSS = `
 }
 `;
 
-// ─── Mock data ────────────────────────────────────────────────
 const USER = {
     firstName: "Мартин", lastName: "Иванов", initials: "МИ", plan: "Отслабване", streak: 14,
     goalCalories: 2200, todayCalories: 1840,
@@ -90,7 +88,6 @@ const USER = {
     ],
 };
 
-// ─── Helpers ──────────────────────────────────────────────────
 function bmiLabel(v: number) {
     if (v < 18.5) return { text: "Поднормено тегло", color: "var(--c-electric,#0066FF)" };
     if (v < 25)   return { text: "Нормално тегло",   color: "#00E676" };
@@ -113,7 +110,6 @@ function sparkline(data: { w: number }[], W: number, H: number, pad = 10) {
     return { pts, line, area };
 }
 
-// ─── Modal base ───────────────────────────────────────────────
 function ModalBase({ title, onClose, children }: { title: string; onClose: () => void; children: JSX.Element | JSX.Element[] }): JSX.Element {
     return (
         <div
@@ -135,7 +131,6 @@ function ModalBase({ title, onClose, children }: { title: string; onClose: () =>
     );
 }
 
-// ─── Log Weight Modal ─────────────────────────────────────────
 function LogWeightModal({ onClose }: { onClose: () => void }): JSX.Element {
     const todayStr = new Date().toISOString().split("T")[0];
     const [date, setDate] = useState(todayStr);
@@ -209,7 +204,6 @@ function LogWeightModal({ onClose }: { onClose: () => void }): JSX.Element {
     );
 }
 
-// ─── Add Meal Modal ───────────────────────────────────────────
 function AddMealModal({ initialType, onClose }: { initialType: string; onClose: () => void }): JSX.Element {
     const [mealType, setMealType] = useState(initialType);
     const [name, setName] = useState("");
@@ -317,7 +311,6 @@ function AddMealModal({ initialType, onClose }: { initialType: string; onClose: 
     );
 }
 
-// ─── Add Water Modal ──────────────────────────────────────────
 function AddWaterModal({ onClose }: { onClose: () => void }): JSX.Element {
     const [glasses, setGlasses] = useState(1);
     const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
@@ -405,7 +398,6 @@ function AddWaterModal({ onClose }: { onClose: () => void }): JSX.Element {
     );
 }
 
-// ─── Header ───────────────────────────────────────────────────
 function DashHeader({ onLogWeight, onToggleSidebar }: { onLogWeight: () => void; onToggleSidebar: () => void }): JSX.Element {
     const today = new Date().toLocaleDateString("bg-BG", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     return (
@@ -436,7 +428,6 @@ function DashHeader({ onLogWeight, onToggleSidebar }: { onLogWeight: () => void;
     );
 }
 
-// ─── Stats row ────────────────────────────────────────────────
 function StatsRow({ onLogWeight }: { onLogWeight: () => void }): JSX.Element {
     const bmi = bmiLabel(USER.bmi);
     const stats = [
@@ -464,7 +455,6 @@ function StatsRow({ onLogWeight }: { onLogWeight: () => void }): JSX.Element {
     );
 }
 
-// ─── Calorie ring card ────────────────────────────────────────
 function CalorieRingCard(): JSX.Element {
     const calPct = USER.todayCalories / USER.goalCalories;
     const protPct = USER.protein.consumed / USER.protein.target;
@@ -503,7 +493,6 @@ function CalorieRingCard(): JSX.Element {
     );
 }
 
-// ─── Macros card ──────────────────────────────────────────────
 function MacrosCard(): JSX.Element {
     const macros = [
         { label: "Протеин",       consumed: USER.protein.consumed, target: USER.protein.target, color: "var(--c-electric,#0066FF)", kcalPer: 4 },
@@ -547,7 +536,6 @@ function MacrosCard(): JSX.Element {
     );
 }
 
-// ─── Weight chart card ────────────────────────────────────────
 function WeightChartCard(): JSX.Element {
     const W = 260, H = 90, PAD = 12;
     const sl = sparkline(USER.weightHistory, W, H, PAD);
@@ -592,7 +580,6 @@ function WeightChartCard(): JSX.Element {
     );
 }
 
-// ─── Meal log card ────────────────────────────────────────────
 function MealLogCard({ onAddMeal }: { onAddMeal: (type: string) => void }): JSX.Element {
     const totalKcal = USER.meals.filter((m) => m.logged).reduce((a, m) => a + m.kcal, 0);
     return (
@@ -632,7 +619,6 @@ function MealLogCard({ onAddMeal }: { onAddMeal: (type: string) => void }): JSX.
     );
 }
 
-// ─── BMI card ─────────────────────────────────────────────────
 function BmiCard(): JSX.Element {
     const bmi = bmiLabel(USER.bmi);
     const pct = (USER.bmi - 15) / 25;
@@ -661,7 +647,6 @@ function BmiCard(): JSX.Element {
     );
 }
 
-// ─── Water card ───────────────────────────────────────────────
 function WaterCard({ onAddWater }: { onAddWater: () => void }): JSX.Element {
     return (
         <div className="card card-sm" style={{ padding: "var(--sp-5)" }}>
@@ -685,7 +670,6 @@ function WaterCard({ onAddWater }: { onAddWater: () => void }): JSX.Element {
     );
 }
 
-// ─── Goals card ───────────────────────────────────────────────
 function GoalsCard(): JSX.Element {
     const totalToLose = USER.startWeight - USER.targetWeight;
     const alreadyLost = USER.startWeight - USER.currentWeight;
@@ -716,7 +700,6 @@ function GoalsCard(): JSX.Element {
     );
 }
 
-// ─── Dashboard page ───────────────────────────────────────────
 function Dashboard({ theme, onToggleTheme }: DashboardProps): JSX.Element {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [modal, setModal] = useState<ModalType>(null);
