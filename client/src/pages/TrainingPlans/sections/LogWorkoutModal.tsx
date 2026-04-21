@@ -22,6 +22,20 @@ export default function LogWorkoutModal({ onClose }: { onClose: () => void }): J
     const chosen = WORKOUT_TYPES.find((t) => t.key === type)!;
 
     function handleSave() {
+        const existing = window.localStorage.getItem("fitlife-workout-log");
+        const workouts = existing ? (JSON.parse(existing) as Array<Record<string, unknown>>) : [];
+
+        workouts.unshift({
+            id: `workout-${Date.now()}`,
+            type,
+            name: name || `${chosen.label} тренировка`,
+            duration: Number(duration) || 0,
+            volume: Number(volume) || 0,
+            note,
+            createdAt: new Date().toISOString(),
+        });
+
+        window.localStorage.setItem("fitlife-workout-log", JSON.stringify(workouts.slice(0, 100)));
         setSaved(true);
         setTimeout(onClose, 1800);
     }
