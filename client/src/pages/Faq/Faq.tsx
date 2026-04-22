@@ -46,7 +46,6 @@ const SECTIONS: FaqSectionMeta[] = [
 ];
 
 const FAQ_ITEMS: FaqEntry[] = [
-    // ── Начало ───────────────────────────────────────────────────────────────
     {
         id: "start-1",
         category: "start",
@@ -98,7 +97,6 @@ const FAQ_ITEMS: FaqEntry[] = [
         ),
     },
 
-    // ── Профил и акаунт ──────────────────────────────────────────────────────
     {
         id: "account-1",
         category: "account",
@@ -166,7 +164,6 @@ const FAQ_ITEMS: FaqEntry[] = [
         ),
     },
 
-    // ── Проследяване на тегло ────────────────────────────────────────────────
     {
         id: "weight-1",
         category: "weight",
@@ -247,7 +244,6 @@ const FAQ_ITEMS: FaqEntry[] = [
         ),
     },
 
-    // ── Калории и калкулатори ────────────────────────────────────────────────
     {
         id: "calories-1",
         category: "calories",
@@ -380,7 +376,6 @@ const FAQ_ITEMS: FaqEntry[] = [
         ),
     },
 
-    // ── Рецепти и продукти ───────────────────────────────────────────────────
     {
         id: "recipes-1",
         category: "recipes",
@@ -406,7 +401,6 @@ const FAQ_ITEMS: FaqEntry[] = [
         ),
     },
 
-    // ── Поверителност и данни ────────────────────────────────────────────────
     {
         id: "privacy-1",
         category: "privacy",
@@ -433,7 +427,6 @@ const FAQ_ITEMS: FaqEntry[] = [
         ),
     },
 
-    // ── Техническо ───────────────────────────────────────────────────────────
     {
         id: "technical-1",
         category: "technical",
