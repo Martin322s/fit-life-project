@@ -4,7 +4,7 @@ export const WEIGHT_DATA = {
         current: 84.2,
         goal: 78.0,
         start: 92.5,
-        height: 179, // cm
+        height: 179,
         unit: "кг",
         startDate: "01.01.2026",
         goalDate: "01.09.2026",
@@ -14,14 +14,14 @@ export const WEIGHT_DATA = {
         bmiGoal: 24.3,
     },
     insights: {
-        weeklyAvgLoss: 0.56,   // kg/week
-        totalLost: 8.3,         // kg
-        remaining: 6.2,         // kg to goal
-        percentComplete: 57,    // %
+        weeklyAvgLoss: 0.56,
+        totalLost: 8.3,
+        remaining: 6.2,
+        percentComplete: 57,
         projectedDate: "Юли 2026",
-        daysAheadOfSchedule: 38, // days ahead
-        bestWeek: 1.1,           // kg in single week
-        consistencyPct: 82,      // % days logged
+        daysAheadOfSchedule: 38,
+        bestWeek: 1.1,
+        consistencyPct: 82,
     },
     measurements: [
         { label: "Талия",        current: 88,   start: 94,   goal: 82,   unit: "см", icon: "📏" },
@@ -29,7 +29,6 @@ export const WEIGHT_DATA = {
         { label: "Ханш",         current: 96,   start: 100,  goal: 92,   unit: "см", icon: "📏" },
         { label: "Бицепс",       current: 34,   start: 33,   goal: 35,   unit: "см", icon: "💪" },
     ],
-    // Full 90-day chart data — realistic downward trend with natural fluctuations
     chartData: [
         { label: "01.01", weight: 92.5 },
         { label: "04.01", weight: 92.1 },
@@ -54,14 +53,13 @@ export const WEIGHT_DATA = {
         { label: "17.03", weight: 85.5 },
         { label: "21.03", weight: 85.2 },
         { label: "25.03", weight: 85.0 },
-        { label: "29.03", weight: 85.4 }, // weekend bump
+        { label: "29.03", weight: 85.4 },
         { label: "02.04", weight: 85.1 },
         { label: "05.04", weight: 84.8 },
         { label: "09.04", weight: 84.5 },
         { label: "11.04", weight: 84.5 },
         { label: "13.04", weight: 84.2 },
     ],
-    // 10 most recent entries for history log
     recentEntries: [
         { date: "13.04", day: "Пон", weight: 84.2, change: -0.3, note: "Сутринта след събуждане" },
         { date: "11.04", day: "Съб", weight: 84.5, change: 0.0,  note: "" },
@@ -74,17 +72,11 @@ export const WEIGHT_DATA = {
         { date: "27.03", day: "Чет", weight: 85.0, change: -0.2, note: "" },
         { date: "25.03", day: "Вт",  weight: 85.2, change: -0.3, note: "" },
     ],
-    // 35-day consistency grid (5 weeks × 7 days), most recent = last entry
     consistencyGrid: [
-        // Week 1 (oldest)
         { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  },
-        // Week 2
         { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  },
-        // Week 3
         { logged: true  }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: true  },
-        // Week 4
         { logged: false }, { logged: true  }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  }, { logged: true  },
-        // Week 5 (most recent)
         { logged: true  }, { logged: false }, { logged: true  }, { logged: true  }, { logged: true  }, { logged: false }, { logged: true  },
     ],
 };
