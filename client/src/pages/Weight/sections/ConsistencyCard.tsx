@@ -8,7 +8,6 @@ export default function ConsistencyCard(): JSX.Element {
     const logged = grid.filter((d) => d.logged).length;
     const pct = Math.round((logged / grid.length) * 100);
 
-    // Current streak from end
     let streak = 0;
     for (let i = grid.length - 1; i >= 0; i--) {
         if (grid[i].logged) streak++;
