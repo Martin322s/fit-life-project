@@ -33,7 +33,6 @@ function WeightChart({ data, goal }: { data: { label: string; weight: number }[]
     const goalY = yOf(goal);
     const labelStep = Math.max(1, Math.floor(data.length / 6));
 
-    // Y-axis ticks: 5 evenly spaced
     const yTicks: number[] = [];
     for (let i = 0; i <= 4; i++) yTicks.push(+(minW + (range / 4) * i).toFixed(1));
 
