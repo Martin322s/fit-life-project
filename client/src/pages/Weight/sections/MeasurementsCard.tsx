@@ -16,7 +16,6 @@ export default function MeasurementsCard(): JSX.Element {
                 {WEIGHT_DATA.measurements.map((m) => {
                     const totalRange = m.start - m.goal;
                     const progress = m.start - m.current;
-                    // For bíceps, higher is better
                     const isPositive = m.goal > m.start;
                     const pct = isPositive
                         ? Math.min(((m.current - m.start) / (m.goal - m.start)) * 100, 100)
