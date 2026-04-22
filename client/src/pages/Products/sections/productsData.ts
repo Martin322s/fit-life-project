@@ -6,7 +6,7 @@ export type NutritionPer100 = {
     fat: number;
     saturated: number;
     fiber: number;
-    sodium: number; // mg
+    sodium: number;
 };
 
 export type Product = {

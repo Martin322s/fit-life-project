@@ -7,7 +7,7 @@ export type Recipe = {
     carbs: number;
     fat: number;
     fiber: number;
-    prepTime: number;   // minutes
+    prepTime: number;
     servings: number;
     difficulty: "Лесно" | "Средно" | "Трудно";
     tags: string[];
@@ -141,7 +141,6 @@ export const RECIPES_DATA = {
         },
     ] as Recipe[],
 
-    // Weekly meal plan — null = not yet planned
     weekPlan: [
         { day: "Пон", breakfast: "Овесени ядки с ягоди", lunch: "Пилешки гърди", dinner: "Сьомга с зеленчуци", isToday: false },
         { day: "Вт",  breakfast: "Яйца по флорентински", lunch: "Киноа с нахут",    dinner: "Пуешки кюфтета",   isToday: false },
@@ -152,7 +151,6 @@ export const RECIPES_DATA = {
         { day: "Нед", breakfast: null,                    lunch: null,               dinner: null,                isToday: false },
     ],
 
-    // Today's nutrition from planned recipes (Ср)
     todayNutrition: {
         calories: { consumed: 1685, target: 2200 },
         protein:  { consumed: 78,   target: 165 },

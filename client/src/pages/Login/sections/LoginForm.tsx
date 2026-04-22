@@ -21,7 +21,6 @@ function LoginForm({ theme, onToggleTheme }: LoginFormProps): JSX.Element {
         setError(null);
         setIsLoading(true);
         try {
-            // TODO: POST /api/auth/login → store token → navigate('/dashboard')
             await new Promise((resolve) => setTimeout(resolve, 1500));
             const storedProfileRaw = window.localStorage.getItem("fitlife-profile");
             const storedProfile = storedProfileRaw

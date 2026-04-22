@@ -139,7 +139,6 @@ function RegisterForm({ theme, onToggleTheme }: RegisterFormProps): JSX.Element 
         setStepError(null);
         setIsLoading(true);
         try {
-            // TODO: POST /api/auth/register → store token → navigate('/dashboard')
             await new Promise((resolve) => setTimeout(resolve, 1500));
             window.localStorage.setItem(
                 "fitlife-profile",
