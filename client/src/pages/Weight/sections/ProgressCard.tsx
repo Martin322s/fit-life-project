@@ -7,7 +7,6 @@ export default function ProgressCard(): JSX.Element {
     const lost = start - current;
     const pct = Math.min((lost / totalToLose) * 100, 100);
 
-    // Milestone markers at 25%, 50%, 75%
     const milestones = [25, 50, 75].map((m) => ({
         pct: m,
         weight: +(start - (totalToLose * m) / 100).toFixed(1),
