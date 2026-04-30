@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 type ForgotPasswordFormProps = {
     theme: "dark" | "light";
@@ -8,6 +9,7 @@ type ForgotPasswordFormProps = {
 };
 
 function ForgotPasswordForm({ theme, onToggleTheme }: ForgotPasswordFormProps): JSX.Element {
+    const { forgotPassword } = useAuth();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -18,14 +20,11 @@ function ForgotPasswordForm({ theme, onToggleTheme }: ForgotPasswordFormProps): 
         setError(null);
         setIsLoading(true);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            window.localStorage.setItem(
-                "fitlife-password-reset-request",
-                JSON.stringify({
-                    email,
-                    requestedAt: new Date().toISOString(),
-                }),
-            );
+            const result = await forgotPassword(email.trim());
+            // In development the server returns the reset URL so we can test without email.
+            if (result.devResetUrl) {
+                console.info("[DEV] Password reset URL:", result.devResetUrl);
+            }
             setSubmitted(true);
         } catch {
             setError("Нещо се обърка. Моля, опитай отново.");
@@ -97,7 +96,7 @@ function ForgotPasswordForm({ theme, onToggleTheme }: ForgotPasswordFormProps): 
                             Линкът е валиден 30 минути.
                         </p>
                         <p className="login-form-subtitle" style={{ marginBottom: "var(--sp-6)" }}>
-                            Не виждаш имейла? Провери папката Спам.
+                            Не виждаш имейла? Провери папката Спам или конзолата (DEV режим).
                         </p>
                         <Link to="/login" className="btn-primary btn-full" style={{ textDecoration: "none" }}>
                             Назад към вход
