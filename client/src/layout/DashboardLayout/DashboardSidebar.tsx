@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import { useAuth, getInitials } from "../../context/AuthContext";
 
 type DashboardSidebarProps = {
     theme: "dark" | "light";
@@ -177,6 +178,17 @@ function SideNavItem({ item, onClick }: { item: NavItemCfg; onClick?: () => void
 }
 
 function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () => {} }: DashboardSidebarProps): JSX.Element {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/");
+    };
+
+    const initials = user ? getInitials(user) : "?";
+    const fullName = user ? `${user.firstName} ${user.lastName}` : "";
+
     return (
         <aside
             className={`dash-sidebar${isOpen ? " dash-sidebar--open" : ""}`}
@@ -236,16 +248,21 @@ function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () =
                     </button>
                 </div>
 
-                <Link to="/" style={{
-                    display: "flex", alignItems: "center", gap: "var(--sp-3)",
-                    padding: "10px var(--sp-3)", borderRadius: "var(--r-md)",
-                    textDecoration: "none", fontSize: "0.875rem", fontWeight: 500,
-                    color: "var(--c-text-muted, #3D5068)",
-                }}>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    style={{
+                        display: "flex", alignItems: "center", gap: "var(--sp-3)",
+                        padding: "10px var(--sp-3)", borderRadius: "var(--r-md)",
+                        background: "transparent", border: "none", cursor: "pointer",
+                        fontSize: "0.875rem", fontWeight: 500, width: "100%",
+                        color: "var(--c-text-muted, #3D5068)",
+                    }}
+                >
                     <IcLogout /><span>Изход</span>
-                </Link>
+                </button>
 
-                {/* User card */}
+                {/* User card — real data from auth context */}
                 <div style={{
                     marginTop: "var(--sp-3)", padding: "var(--sp-3)", borderRadius: "var(--r-md)",
                     background: "rgba(255,255,255,0.03)",
@@ -258,10 +275,10 @@ function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () =
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontFamily: "var(--font-display)", fontSize: "0.75rem", fontWeight: 700,
                         color: "var(--c-bg, #080C10)",
-                    }}>МИ</div>
+                    }}>{initials}</div>
                     <div style={{ minWidth: 0 }}>
-                        <div className="body-sm" style={{ color: "var(--color-cream)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Мартин Иванов</div>
-                        <div className="label text-gray">Безплатен план</div>
+                        <div className="body-sm" style={{ color: "var(--color-cream)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName}</div>
+                        <div className="label text-gray">FitLife{user?.role === "admin" ? " Admin" : " Free"}</div>
                     </div>
                 </div>
             </div>
