@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { authApi } from "../../../services/authApi";
+import { useAuth } from "../../../context/AuthContext";
 
 type LoginFormProps = {
     theme: "dark" | "light";
@@ -9,6 +11,7 @@ type LoginFormProps = {
 
 function LoginForm({ theme, onToggleTheme }: LoginFormProps): JSX.Element {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -16,32 +19,16 @@ function LoginForm({ theme, onToggleTheme }: LoginFormProps): JSX.Element {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null);
         setIsLoading(true);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            const storedProfileRaw = window.localStorage.getItem("fitlife-profile");
-            const storedProfile = storedProfileRaw
-                ? (JSON.parse(storedProfileRaw) as { email?: string })
-                : null;
-
-            if (storedProfile?.email && storedProfile.email !== email) {
-                throw new Error("invalid_credentials");
-            }
-
-            window.localStorage.setItem(
-                "fitlife-auth",
-                JSON.stringify({
-                    email,
-                    rememberMe,
-                    loggedInAt: new Date().toISOString(),
-                }),
-            );
+            const { user, token } = await authApi.login({ email, password });
+            login(user, token, rememberMe);
             navigate("/dashboard");
-        } catch {
-            setError("Грешен имейл или парола. Опитай отново.");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Грешен имейл или парола. Опитай отново.");
         } finally {
             setIsLoading(false);
         }
