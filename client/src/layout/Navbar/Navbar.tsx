@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import Logo from "../Logo/Logo";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 type NavbarProps = {
     theme: "dark" | "light";
@@ -10,6 +11,14 @@ type NavbarProps = {
 };
 
 function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps): JSX.Element {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/");
+    };
+
     return (
         <nav className="navbar" id="navbar">
             <div className="container">
@@ -35,19 +44,34 @@ function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps)
                             Контакти
                         </NavLink>
                     </li>
-                    <li>
-                        <NavLink to="/dashboard" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
-                            Табло
-                        </NavLink>
-                    </li>
+                    {user && (
+                        <li>
+                            <NavLink to="/dashboard" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
+                                Табло
+                            </NavLink>
+                        </li>
+                    )}
                 </ul>
                 <div className="navbar-actions">
-                    <Link to="/login" className="btn-secondary btn-sm">
-                        Вход
-                    </Link>
-                    <Link to="/register" className="btn-primary btn-sm">
-                        Започни безплатно
-                    </Link>
+                    {user ? (
+                        <>
+                            <span className="navbar-link" style={{ cursor: "default" }}>
+                                {user.firstName}
+                            </span>
+                            <button type="button" className="btn-secondary btn-sm" onClick={handleLogout}>
+                                Изход
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/login" className="btn-secondary btn-sm">
+                                Вход
+                            </Link>
+                            <Link to="/register" className="btn-primary btn-sm">
+                                Започни безплатно
+                            </Link>
+                        </>
+                    )}
                     <button
                         className="theme-toggle"
                         type="button"
