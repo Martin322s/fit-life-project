@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
+import type { JSX } from "react";
 import { Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import PrivateRoute from "./components/PrivateRoute";
+import GuestRoute from "./components/GuestRoute";
 import MainLayout from "./layout/MainLayout";
 import Home from "./pages/Home/Home";
 import About from "./pages/About/About";
@@ -11,6 +15,7 @@ import Privacy from "./pages/Privacy/Privacy";
 import Terms from "./pages/Terms/Terms";
 import Cookies from "./pages/Cookies/Cookies";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Calories from "./pages/Calories/Calories";
 import Weight from "./pages/Weight/Weight";
@@ -49,33 +54,38 @@ function App() {
         setTheme((current) => (current === "light" ? "dark" : "light"));
     };
 
+    const pr = (el: JSX.Element) => <PrivateRoute>{el}</PrivateRoute>;
+
     return (
-        <Routes>
-            <Route element={<MainLayout theme={theme} onToggleTheme={toggleTheme} />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/faq" element={<Faq />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/cookies" element={<Cookies />} />
-            </Route>
-            <Route path="/login" element={<Login theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/register" element={<Register theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/forgot-password" element={<ForgotPassword theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/dashboard" element={<Dashboard theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/calories" element={<Calories theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/weight" element={<Weight theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/recipes" element={<Recipes theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/diets" element={<Diets theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/training-plans" element={<TrainingPlans theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/products" element={<Products theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/shop" element={<Shop theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/challenges" element={<Challenges theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/calculators" element={<Calculators theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/profile" element={<Profile theme={theme} onToggleTheme={toggleTheme} />} />
-            <Route path="/settings" element={<Settings theme={theme} onToggleTheme={toggleTheme} />} />
-        </Routes>
+        <AuthProvider>
+            <Routes>
+                <Route element={<MainLayout theme={theme} onToggleTheme={toggleTheme} />}>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/faq" element={<Faq />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/cookies" element={<Cookies />} />
+                </Route>
+                <Route path="/login" element={<GuestRoute><Login theme={theme} onToggleTheme={toggleTheme} /></GuestRoute>} />
+                <Route path="/register" element={<GuestRoute><Register theme={theme} onToggleTheme={toggleTheme} /></GuestRoute>} />
+                <Route path="/forgot-password" element={<ForgotPassword theme={theme} onToggleTheme={toggleTheme} />} />
+                <Route path="/reset-password" element={<ResetPassword theme={theme} onToggleTheme={toggleTheme} />} />
+                <Route path="/dashboard" element={pr(<Dashboard theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/calories" element={pr(<Calories theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/weight" element={pr(<Weight theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/recipes" element={pr(<Recipes theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/diets" element={pr(<Diets theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/training-plans" element={pr(<TrainingPlans theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/products" element={pr(<Products theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/shop" element={pr(<Shop theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/challenges" element={pr(<Challenges theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/calculators" element={pr(<Calculators theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/profile" element={pr(<Profile theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/settings" element={pr(<Settings theme={theme} onToggleTheme={toggleTheme} />)} />
+            </Routes>
+        </AuthProvider>
     );
 }
 
