@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import DashboardSidebar from "../../layout/DashboardLayout/DashboardSidebar";
+import { useAuth, getInitials } from "../../context/AuthContext";
 
 type DashboardProps = { theme: "dark" | "light"; onToggleTheme: () => void };
 type ModalType = "weight" | "meal" | "water" | null;
@@ -399,7 +400,9 @@ function AddWaterModal({ onClose }: { onClose: () => void }): JSX.Element {
 }
 
 function DashHeader({ onLogWeight, onToggleSidebar }: { onLogWeight: () => void; onToggleSidebar: () => void }): JSX.Element {
+    const { user } = useAuth();
     const today = new Date().toLocaleDateString("bg-BG", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const initials = user ? getInitials(user) : "?";
     return (
         <div className="dash-header" style={{ padding: "var(--sp-4) var(--sp-6)", borderBottom: "1px solid var(--c-border,rgba(255,255,255,0.06))", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--c-surface-1,#0E1318)", gap: "var(--sp-3)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", minWidth: 0 }}>
@@ -411,18 +414,19 @@ function DashHeader({ onLogWeight, onToggleSidebar }: { onLogWeight: () => void;
                 </button>
                 <div style={{ minWidth: 0 }}>
                     <h1 style={{ fontFamily: "var(--font-display)", fontSize: "1.7rem", fontWeight: 800, color: "var(--color-cream)", lineHeight: 1.2, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        Здравей, <span style={{ color: "var(--c-acid,#C8FF00)" }}>{USER.firstName}</span>! 👋
+                        Здравей, <span style={{ color: "var(--c-acid,#C8FF00)" }}>{user?.firstName ?? ""}</span>! 👋
                     </h1>
                     <div className="body-sm text-gray" style={{ textTransform: "capitalize", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{today}</div>
                 </div>
             </div>
             <div className="dash-header-actions" style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", flexShrink: 0 }}>
+                {/* TODO(Stage 5): Replace with real streak count from /api/progress or /api/goals */}
                 <div className="dash-header-streak" style={{ alignItems: "center", gap: "var(--sp-2)", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--r-full)", background: "rgba(200,255,0,0.08)", border: "1px solid rgba(200,255,0,0.2)" }}>
                     <span>🔥</span>
                     <span className="body-sm" style={{ color: "var(--c-acid,#C8FF00)", fontWeight: 600 }}>{USER.streak} дни серия</span>
                 </div>
                 <button type="button" className="btn-primary btn-sm dash-header-logbtn" onClick={onLogWeight}>+ Запиши тегло</button>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: "linear-gradient(135deg,var(--c-electric,#0066FF),var(--c-acid,#C8FF00))", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: "0.8rem", fontWeight: 700, color: "var(--c-bg,#080C10)" }}>{USER.initials}</div>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: "linear-gradient(135deg,var(--c-electric,#0066FF),var(--c-acid,#C8FF00))", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: "0.8rem", fontWeight: 700, color: "var(--c-bg,#080C10)" }}>{initials}</div>
             </div>
         </div>
     );
