@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import { Link } from "react-router-dom";
+import { authApi } from "../../../services/authApi";
+import { useAuth } from "../../../context/AuthContext";
 import StepIndicator from "./StepIndicator";
 import Step1Account from "./Step1Account";
 import Step2Body from "./Step2Body";
@@ -94,6 +96,7 @@ type RegisterFormProps = {
 };
 
 function RegisterForm({ theme, onToggleTheme }: RegisterFormProps): JSX.Element {
+    const { login } = useAuth();
     const [step, setStep] = useState<Step>(1);
     const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
     const [stepError, setStepError] = useState<string | null>(null);
@@ -139,7 +142,12 @@ function RegisterForm({ theme, onToggleTheme }: RegisterFormProps): JSX.Element 
         setStepError(null);
         setIsLoading(true);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            const { user, token } = await authApi.register(formData);
+            login(user, token);
+
+            // Keep profile data in localStorage so the existing dashboard pages
+            // continue to work with their current mock-data approach.
+            const calc = calculateResults(formData);
             window.localStorage.setItem(
                 "fitlife-profile",
                 JSON.stringify({
@@ -173,7 +181,7 @@ function RegisterForm({ theme, onToggleTheme }: RegisterFormProps): JSX.Element 
                     goal: formData.goal === "lose" ? "Релеф" : formData.goal === "gain" ? "Покачване" : "Поддръжка",
                     activity: formData.activity === "sedentary" ? "Заседнал" : formData.activity === "light" ? "Леко активен" : formData.activity === "moderate" ? "Умерено активен" : "Много активен",
                     training: "Нов профил · без шаблон",
-                    calories: calculateResults(formData).goalCalories,
+                    calories: calc.goalCalories,
                     protein: Math.round((Number(formData.weight) || 82) * 2),
                     water: 2.8,
                     streak: 1,
@@ -182,18 +190,11 @@ function RegisterForm({ theme, onToggleTheme }: RegisterFormProps): JSX.Element 
                     privacy: "Само за мен",
                 }),
             );
-            window.localStorage.setItem(
-                "fitlife-auth",
-                JSON.stringify({
-                    email: formData.email,
-                    rememberMe: true,
-                    loggedInAt: new Date().toISOString(),
-                }),
-            );
-            setResults(calculateResults(formData));
+
+            setResults(calc);
             setStep("success");
-        } catch {
-            setStepError("Нещо се обърка. Опитай отново.");
+        } catch (err) {
+            setStepError(err instanceof Error ? err.message : "Нещо се обърка. Опитай отново.");
         } finally {
             setIsLoading(false);
         }
