@@ -35,6 +35,18 @@ export type RegisterInput = {
   activity?: "sedentary" | "light" | "moderate" | "very";
 };
 
+function toHeightCm(height?: number, unit?: "cm" | "ft"): number | null {
+  if (height == null || Number.isNaN(height)) return null;
+  return unit === "ft" ? +(height * 30.48).toFixed(1) : height;
+}
+
+function toGoalType(goal?: "lose" | "maintain" | "gain"): "lose_weight" | "maintain" | "gain_weight" | null {
+  if (goal === "lose") return "lose_weight";
+  if (goal === "maintain") return "maintain";
+  if (goal === "gain") return "gain_weight";
+  return null;
+}
+
 export type AuthResult = {
   user: PublicUser;
   token: string;
@@ -62,6 +74,8 @@ export async function registerUser(input: RegisterInput): Promise<AuthResult> {
   if (await emailExists(input.email)) throw new Error("email_taken");
 
   const passwordHash = await bcrypt.hash(input.password, 12);
+  const heightCm = toHeightCm(input.height, input.heightUnit);
+  const goalType = toGoalType(input.goal);
 
   const user = await insertUser({
     email: input.email,
@@ -77,6 +91,9 @@ export async function registerUser(input: RegisterInput): Promise<AuthResult> {
     weightUnit: input.weightUnit ?? null,
     goal: input.goal ?? null,
     activity: input.activity ?? null,
+    heightCm,
+    activityLevel: input.activity ?? null,
+    goalType,
   });
 
   const token = signToken({
@@ -96,6 +113,62 @@ export type ForgotPasswordResult = {
   resetUrl: string;
 };
 
+type EmailJsPayload = {
+  service_id: string;
+  template_id: string;
+  user_id: string;
+  accessToken?: string;
+  template_params: {
+    to_email: string;
+    email: string;
+    link: string;
+    reset_url: string;
+  };
+};
+
+async function sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
+  const serviceId = process.env.EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID;
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY;
+  const accessToken = process.env.EMAILJS_ACCESS_TOKEN;
+
+  if (!serviceId || !templateId || !publicKey) {
+    console.log(resetUrl);
+    return;
+  }
+
+  const payload: EmailJsPayload = {
+    service_id: serviceId,
+    template_id: templateId,
+    user_id: publicKey,
+    ...(accessToken ? { accessToken } : {}),
+    template_params: {
+      to_email: email,
+      email,
+      link: resetUrl,
+      reset_url: resetUrl,
+    },
+  };
+
+  const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    throw new Error(`emailjs_failed:${response.status}:${details}`);
+  }
+}
+
+function getClientUrl(): string {
+  const clientUrl = process.env.CLIENT_URL ?? process.env.APP_URL;
+  if (clientUrl) return clientUrl.replace(/\/$/, "");
+  if (process.env.NODE_ENV !== "production") return "http://localhost:5173";
+  throw new Error("CLIENT_URL is not set");
+}
+
 /**
  * Generates a reset token, stores its SHA-256 hash in the DB, and returns dev info.
  * In production, remove the return value and send the URL via email instead.
@@ -110,10 +183,9 @@ export async function forgotPassword(email: string): Promise<ForgotPasswordResul
 
   await setResetToken(user.id, tokenHash, expiresAt);
 
-  const APP_URL = process.env.APP_URL ?? "http://localhost:5173";
-  const resetUrl = `${APP_URL}/reset-password?token=${plainToken}`;
+  const resetUrl = `${getClientUrl()}/reset-password?token=${plainToken}`;
 
-  console.log(`\n[DEV] Password reset link for ${email}:\n${resetUrl}\n`);
+  await sendPasswordResetEmail(user.email, resetUrl);
 
   return { devToken: plainToken, resetUrl };
 }

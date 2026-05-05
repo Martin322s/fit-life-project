@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ALLOWED_ORIGINS = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-];
+function allowedOrigins(): string[] {
+  const configured = [
+    process.env.CLIENT_URL,
+    process.env.SERVER_URL,
+    process.env.MOBILE_URL,
+    ...(process.env.CORS_ALLOWED_ORIGINS?.split(",") ?? []),
+  ]
+    .map((origin) => origin?.trim())
+    .filter((origin): origin is string => Boolean(origin));
+
+  if (process.env.NODE_ENV !== "production") {
+    configured.push("http://localhost:5173", "http://localhost:3000");
+  }
+
+  return Array.from(new Set(configured));
+}
 
 export function middleware(request: NextRequest) {
   const origin = request.headers.get("origin") ?? "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const origins = allowedOrigins();
+  const allowed = origins.includes(origin) ? origin : origins[0] ?? "";
 
   if (request.method === "OPTIONS") {
     return new NextResponse(null, {
@@ -22,7 +35,7 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  response.headers.set("Access-Control-Allow-Origin", allowed);
+  if (allowed) response.headers.set("Access-Control-Allow-Origin", allowed);
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return response;

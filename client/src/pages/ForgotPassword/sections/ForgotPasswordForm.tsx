@@ -20,11 +20,7 @@ function ForgotPasswordForm({ theme, onToggleTheme }: ForgotPasswordFormProps): 
         setError(null);
         setIsLoading(true);
         try {
-            const result = await forgotPassword(email.trim());
-            // In development the server returns the reset URL so we can test without email.
-            if (result.devResetUrl) {
-                console.info("[DEV] Password reset URL:", result.devResetUrl);
-            }
+            await forgotPassword(email.trim());
             setSubmitted(true);
         } catch {
             setError("Нещо се обърка. Моля, опитай отново.");
@@ -32,7 +28,6 @@ function ForgotPasswordForm({ theme, onToggleTheme }: ForgotPasswordFormProps): 
             setIsLoading(false);
         }
     };
-
     return (
         <main className="login-form-panel">
             {/* Theme toggle */}

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -11,7 +11,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx db/seed.ts"
+    "db:seed": "tsx db/seed.ts",
+    "db:seed:recipes": "tsx db/seed-recipes.ts",
+    "db:seed:diets": "tsx db/seed-diets.ts",
+    "db:seed:training-plans": "tsx db/seed-training-plans.ts",
+    "db:seed:products": "tsx db/seed-products.ts",
+    "db:seed:challenges": "tsx db/seed-challenges.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
