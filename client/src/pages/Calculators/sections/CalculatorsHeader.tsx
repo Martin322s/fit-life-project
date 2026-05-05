@@ -1,8 +1,11 @@
 import type { JSX } from "react";
 
-type Props = { onToggleSidebar: () => void };
+type Props = {
+    initials: string;
+    onToggleSidebar: () => void;
+};
 
-export default function CalculatorsHeader({ onToggleSidebar }: Props): JSX.Element {
+export default function CalculatorsHeader({ initials, onToggleSidebar }: Props): JSX.Element {
     const today = new Date().toLocaleDateString("bg-BG", {
         weekday: "long",
         day: "numeric",
@@ -21,15 +24,15 @@ export default function CalculatorsHeader({ onToggleSidebar }: Props): JSX.Eleme
 
             <div style={{ flex: 1, minWidth: 0 }}>
                 <h1 className="cx-title">Калкулатори</h1>
-                <div className="cx-header-sub body-sm text-gray">{today} · health, nutrition и performance tools</div>
+                <div className="cx-header-sub body-sm text-gray">{today} · здраве, хранене и фитнес цели</div>
             </div>
 
             <div className="cx-header-right">
                 <div className="cx-badge">
-                    <span>10</span>
-                    <span className="label">tools</span>
+                    <span>8</span>
+                    <span className="label">калкулатора</span>
                 </div>
-                <div className="cx-avatar">МИ</div>
+                <div className="cx-avatar">{initials}</div>
             </div>
         </div>
     );
