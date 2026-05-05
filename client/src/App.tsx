@@ -4,6 +4,7 @@ import { Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import GuestRoute from "./components/GuestRoute";
+import AdminRoute from "./components/AdminRoute";
 import MainLayout from "./layout/MainLayout";
 import Home from "./pages/Home/Home";
 import About from "./pages/About/About";
@@ -27,7 +28,7 @@ import Shop from "./pages/Shop/Shop";
 import Challenges from "./pages/Challenges/Challenges";
 import Calculators from "./pages/Calculators/Calculators";
 import Profile from "./pages/Profile/Profile";
-import Settings from "./pages/Settings/Settings";
+import Admin from "./pages/Admin/Admin";
 
 type Theme = "dark" | "light";
 
@@ -83,7 +84,7 @@ function App() {
                 <Route path="/challenges" element={pr(<Challenges theme={theme} onToggleTheme={toggleTheme} />)} />
                 <Route path="/calculators" element={pr(<Calculators theme={theme} onToggleTheme={toggleTheme} />)} />
                 <Route path="/profile" element={pr(<Profile theme={theme} onToggleTheme={toggleTheme} />)} />
-                <Route path="/settings" element={pr(<Settings theme={theme} onToggleTheme={toggleTheme} />)} />
+                <Route path="/admin" element={<AdminRoute><Admin theme={theme} onToggleTheme={toggleTheme} /></AdminRoute>} />
             </Routes>
         </AuthProvider>
     );
