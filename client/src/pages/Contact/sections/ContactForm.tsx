@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import { Link } from "react-router-dom";
+import { sendContactMessage } from "../../../services/contactApi";
 
 type FormData = {
     firstName: string;
@@ -47,11 +48,7 @@ function ContactForm(): JSX.Element {
         e.preventDefault();
         setSubmitStatus("submitting");
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            const existing = window.localStorage.getItem("fitlife-contact-messages");
-            const messages = existing ? (JSON.parse(existing) as FormData[]) : [];
-            messages.push(formData);
-            window.localStorage.setItem("fitlife-contact-messages", JSON.stringify(messages));
+            await sendContactMessage(formData);
             setSubmitStatus("success");
         } catch {
             setSubmitStatus("error");
