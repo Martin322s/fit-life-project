@@ -52,3 +52,5 @@ Never commit real `.env` files.
 ## Test Credentials
 
 Use seeded accounts if your local database has been seeded, or register a fresh user through the app.
+
+https://expo.dev/accounts/martin13s18/projects/mobile/builds/3127c711-ee57-43b6-af92-1000b2b10327 - mobile apk link
