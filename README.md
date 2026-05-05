@@ -53,4 +53,4 @@ Never commit real `.env` files.
 
 Use seeded accounts if your local database has been seeded, or register a fresh user through the app.
 
-https://expo.dev/accounts/martin13s18/projects/mobile/builds/3127c711-ee57-43b6-af92-1000b2b10327 - mobile apk link
+https://expo.dev/accounts/martin13s18/projects/fit-life/builds/ec050589-bc7a-4f19-918f-3ee2fb0ecaab - mobile apk link

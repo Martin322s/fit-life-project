@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "mobile",
-    "slug": "mobile",
+    "slug": "fit-life",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -48,8 +48,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e6c95ad7-2aab-4854-9756-b52471f5b021"
+        "projectId": "da2e4ce9-427d-4693-84cb-01464e54c580"
       }
-    }
+    },
+    "owner": "martin13s18"
   }
 }
