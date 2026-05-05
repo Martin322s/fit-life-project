@@ -1,9 +1,13 @@
 import type { JSX } from "react";
-import { CHALLENGE_STATS } from "./challengesData";
 
-type Props = { onToggleSidebar: () => void; onCreateChallenge: () => void };
+type Props = {
+    onToggleSidebar: () => void;
+    onRefresh: () => void;
+    liveNow: number;
+    initials: string;
+};
 
-export default function ChallengesHeader({ onToggleSidebar, onCreateChallenge }: Props): JSX.Element {
+export default function ChallengesHeader({ onToggleSidebar, onRefresh, liveNow, initials }: Props): JSX.Element {
     const today = new Date().toLocaleDateString("bg-BG", {
         weekday: "long",
         day: "numeric",
@@ -22,18 +26,20 @@ export default function ChallengesHeader({ onToggleSidebar, onCreateChallenge }:
 
             <div style={{ flex: 1, minWidth: 0 }}>
                 <h1 className="cg-title">Предизвикателства</h1>
-                <div className="cg-header-sub body-sm text-gray">{today} · {CHALLENGE_STATS.liveNow} активни challenge-а</div>
+                <div className="cg-header-sub body-sm text-gray">{today} · {liveNow} активни участия</div>
             </div>
 
             <div className="cg-header-right">
-                <button type="button" className="cg-action-btn" onClick={onCreateChallenge}>
+                <button type="button" className="cg-action-btn" onClick={onRefresh}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="23 4 23 10 17 10" />
+                        <polyline points="1 20 1 14 7 14" />
+                        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
+                        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14" />
                     </svg>
-                    <span>Нов challenge</span>
+                    <span>Обнови</span>
                 </button>
-                <div className="cg-avatar">МИ</div>
+                <div className="cg-avatar">{initials}</div>
             </div>
         </div>
     );
