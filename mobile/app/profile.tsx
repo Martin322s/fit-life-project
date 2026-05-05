@@ -1,209 +1,225 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-  TextInput,
+  View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackHeader } from '@/src/components/BackHeader';
 import { Card } from '@/src/components/Card';
 import { C, R } from '@/src/theme';
+import { profileApi, type ApiProfile, type ProfileGoalType, type ProfileActivityLevel } from '@/src/services/profileApi';
 
-const INITIAL = {
-  name: 'Мартин Иванов',
-  email: 'martin@example.com',
-  age: '30',
-  height: '180',
-  weight: '77.3',
-  goalWeight: '72',
-  goal: 'lose' as 'lose' | 'maintain' | 'gain',
-  activityLevel: 'moderate',
-  plan: 'Pro',
-};
+const GOALS: { value: ProfileGoalType; label: string }[] = [
+  { value: 'lose_weight', label: 'Отслабване' },
+  { value: 'maintain',    label: 'Поддържане' },
+  { value: 'gain_weight', label: 'Качване'    },
+];
 
-const GOALS = [
-  { value: 'lose', label: 'Отслабване' },
-  { value: 'maintain', label: 'Поддържане' },
-  { value: 'gain', label: 'Качване' },
-] as const;
+const ACTIVITIES: { value: ProfileActivityLevel; label: string }[] = [
+  { value: 'sedentary', label: 'Заседнал'        },
+  { value: 'light',     label: 'Лека активност'  },
+  { value: 'moderate',  label: 'Умерена активност' },
+  { value: 'very',      label: 'Много активен'   },
+];
 
-const ACTIVITY = [
-  { value: 'sedentary', label: 'Заседнал' },
-  { value: 'light', label: 'Лека активност' },
-  { value: 'moderate', label: 'Умерена активност' },
-  { value: 'active', label: 'Активен' },
-  { value: 'very_active', label: 'Много активен' },
-] as const;
+type Genders = 'male' | 'female';
 
 export default function Profile() {
-  const [form, setForm] = useState(INITIAL);
-  const [saved, setSaved] = useState(false);
+  const [profile, setProfile] = useState<ApiProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [saved, setSaved]     = useState(false);
+  const [error, setError]     = useState('');
 
-  const set = (key: keyof typeof INITIAL, value: string) => {
-    setForm(p => ({ ...p, [key]: value }));
+  // Editable form state
+  const [firstName, setFirstName]   = useState('');
+  const [lastName, setLastName]     = useState('');
+  const [age, setAge]               = useState('');
+  const [gender, setGender]         = useState<Genders | ''>('');
+  const [heightCm, setHeightCm]     = useState('');
+  const [goalWeight, setGoalWeight] = useState('');
+  const [goalType, setGoalType]     = useState<ProfileGoalType | null>(null);
+  const [activity, setActivity]     = useState<ProfileActivityLevel | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { profile: p } = await profileApi.get();
+      setProfile(p);
+      setFirstName(p.firstName);
+      setLastName(p.lastName);
+      setAge(p.age != null ? String(p.age) : '');
+      setGender((p.gender ?? '') as Genders | '');
+      setHeightCm(p.heightCm != null ? String(p.heightCm) : '');
+      setGoalWeight(p.goalWeight != null ? String(p.goalWeight) : '');
+      setGoalType(p.goalType ?? null);
+      setActivity(p.activityLevel ?? null);
+    } catch {}
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const bmi = profile?.currentWeight && heightCm
+    ? +(profile.currentWeight / ((Number(heightCm) / 100) ** 2)).toFixed(1)
+    : null;
+
+  const handleSave = async () => {
+    setSaving(true);
     setSaved(false);
+    setError('');
+    try {
+      await profileApi.update({
+        firstName: firstName.trim() || undefined,
+        lastName:  lastName.trim()  || undefined,
+        gender: gender ? (gender as 'male' | 'female') : null,
+        age:        age        ? Number(age)        : null,
+        heightCm:   heightCm   ? Number(heightCm)   : null,
+        goalWeight: goalWeight ? Number(goalWeight) : null,
+        goalType:   goalType   ?? null,
+        activityLevel: activity ?? null,
+      });
+      setSaved(true);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Грешка. Опитайте отново.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const bmi = form.weight && form.height
-    ? (parseFloat(form.weight) / ((parseFloat(form.height) / 100) ** 2)).toFixed(1)
-    : '—';
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top']}>
+        <View style={styles.center}><ActivityIndicator color={C.primary} size="large" /></View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <BackHeader
         title="Профил"
-        action={{ label: saved ? '✓ Запазен' : 'Запази', onPress: () => setSaved(true) }}
+        action={{
+          label: saving ? '…' : saved ? '✓ Запазен' : 'Запази',
+          onPress: handleSave,
+        }}
       />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {/* Avatar Card */}
-        <Card style={styles.avatarCard}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>МИ</Text>
-          </View>
-          <Text style={styles.avatarName}>{form.name}</Text>
-          <Text style={styles.avatarEmail}>{form.email}</Text>
-          <View style={styles.planBadge}>
-            <Text style={styles.planBadgeText}>⚡ {form.plan} план</Text>
-          </View>
-          <View style={styles.quickStats}>
-            <QStat label="ИТМ" value={bmi} />
-            <View style={styles.qstatDiv} />
-            <QStat label="Тегло" value={`${form.weight} кг`} />
-            <View style={styles.qstatDiv} />
-            <QStat label="Цел" value={`${form.goalWeight} кг`} />
-          </View>
-        </Card>
+        {/* Stats */}
+        {bmi || profile?.currentWeight ? (
+          <Card style={styles.statsCard}>
+            {profile?.currentWeight && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Текущо тегло</Text>
+                <Text style={styles.statVal}>{profile.currentWeight} кг</Text>
+              </View>
+            )}
+            {bmi && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>ИТМ</Text>
+                <Text style={[styles.statVal, { color: bmi < 25 ? C.green : bmi < 30 ? C.amber : C.red }]}>{bmi}</Text>
+              </View>
+            )}
+            {goalWeight && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Целево тегло</Text>
+                <Text style={styles.statVal}>{goalWeight} кг</Text>
+              </View>
+            )}
+          </Card>
+        ) : null}
 
-        {/* Personal Info */}
+        {/* Personal info */}
         <Card>
-          <Text style={styles.cardTitle}>Лична информация</Text>
-          <ProfileField label="Имена" value={form.name} onSet={v => set('name', v)} />
-          <ProfileField label="Email" value={form.email} onSet={v => set('email', v)} keyboard="email-address" />
-          <ProfileField label="Възраст" value={form.age} onSet={v => set('age', v)} keyboard="numeric" suffix="г." />
-        </Card>
+          <Text style={styles.sectionTitle}>Лична информация</Text>
+          <Field label="Собствено Иiе" value={firstName} onChangeText={v => { setFirstName(v); setSaved(false); }} placeholder="Иван" />
+          <Field label="Фамилия"       value={lastName}  onChangeText={v => { setLastName(v);  setSaved(false); }} placeholder="Петров" />
+          <Field label="Възраст"       value={age}       onChangeText={v => { setAge(v);       setSaved(false); }} placeholder="30" keyboardType="numeric" />
 
-        {/* Body Stats */}
-        <Card>
-          <Text style={styles.cardTitle}>Физически данни</Text>
-          <ProfileField label="Тегло" value={form.weight} onSet={v => set('weight', v)} keyboard="numeric" suffix="кг" />
-          <ProfileField label="Целево тегло" value={form.goalWeight} onSet={v => set('goalWeight', v)} keyboard="numeric" suffix="кг" />
-          <ProfileField label="Височина" value={form.height} onSet={v => set('height', v)} keyboard="numeric" suffix="см" />
-        </Card>
-
-        {/* Goal */}
-        <Card>
-          <Text style={styles.cardTitle}>Цел</Text>
-          <View style={styles.optionRow}>
-            {GOALS.map(g => (
-              <Pressable
-                key={g.value}
-                style={[styles.optionBtn, form.goal === g.value && styles.optionActive]}
-                onPress={() => { set('goal', g.value); }}
-              >
-                <Text style={[styles.optionText, form.goal === g.value && { color: C.primary }]}>
-                  {g.label}
+          <Text style={styles.fieldLabel}>Пол</Text>
+          <View style={styles.chipRow}>
+            {(['male', 'female'] as const).map(g => (
+              <Pressable key={g} style={[styles.chip, gender === g && styles.chipActive]} onPress={() => { setGender(g); setSaved(false); }}>
+                <Text style={[styles.chipText, gender === g && styles.chipTextActive]}>
+                  {g === 'male' ? 'Мъж' : 'Жена'}
                 </Text>
               </Pressable>
             ))}
           </View>
         </Card>
 
-        {/* Activity Level */}
+        {/* Body stats */}
         <Card>
-          <Text style={styles.cardTitle}>Ниво на активност</Text>
-          {ACTIVITY.map(a => (
-            <Pressable
-              key={a.value}
-              style={[styles.activityRow, form.activityLevel === a.value && styles.activityRowActive]}
-              onPress={() => set('activityLevel', a.value)}
-            >
-              <Text style={[styles.activityLabel, form.activityLevel === a.value && { color: C.primary }]}>
-                {a.label}
-              </Text>
-              {form.activityLevel === a.value && <Text style={{ color: C.primary }}>✓</Text>}
-            </Pressable>
-          ))}
+          <Text style={styles.sectionTitle}>Физически данни</Text>
+          <Field label="Ръст (см)"         value={heightCm}   onChangeText={v => { setHeightCm(v);   setSaved(false); }} placeholder="175" keyboardType="numeric" />
+          <Field label="Целево тегло (кг)" value={goalWeight} onChangeText={v => { setGoalWeight(v); setSaved(false); }} placeholder="70"  keyboardType="numeric" />
         </Card>
 
-        <Pressable style={[styles.saveBtn, saved && styles.saveBtnDone]} onPress={() => setSaved(true)}>
-          <Text style={styles.saveBtnText}>{saved ? '✓ Промените са запазени' : 'Запази промените'}</Text>
+        {/* Goals */}
+        <Card>
+          <Text style={styles.sectionTitle}>Цел</Text>
+          <View style={styles.chipRow}>
+            {GOALS.map(g => (
+              <Pressable key={g.value} style={[styles.chip, goalType === g.value && styles.chipActive]} onPress={() => { setGoalType(g.value); setSaved(false); }}>
+                <Text style={[styles.chipText, goalType === g.value && styles.chipTextActive]}>{g.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Card>
+
+        {/* Activity */}
+        <Card>
+          <Text style={styles.sectionTitle}>Ниво на активност</Text>
+          <View style={styles.chipRow}>
+            {ACTIVITIES.map(a => (
+              <Pressable key={a.value} style={[styles.chip, activity === a.value && styles.chipActive]} onPress={() => { setActivity(a.value); setSaved(false); }}>
+                <Text style={[styles.chipText, activity === a.value && styles.chipTextActive]}>{a.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Card>
+
+        <Pressable style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
+          {saving
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.saveBtnText}>{saved ? '✓ Запазен' : 'Запази промените'}</Text>
+          }
         </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ProfileField({
-  label, value, onSet, keyboard, suffix,
-}: {
-  label: string; value: string; onSet: (v: string) => void; keyboard?: 'email-address' | 'numeric'; suffix?: string;
-}) {
+function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) {
   return (
-    <View style={pfStyles.field}>
-      <Text style={pfStyles.label}>{label}</Text>
-      <View style={pfStyles.inputRow}>
-        <TextInput
-          style={pfStyles.input}
-          value={value}
-          onChangeText={onSet}
-          keyboardType={keyboard ?? 'default'}
-          autoCapitalize={keyboard === 'email-address' ? 'none' : 'words'}
-          autoCorrect={false}
-        />
-        {suffix && <Text style={pfStyles.suffix}>{suffix}</Text>}
-      </View>
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput style={styles.input} placeholderTextColor={C.muted} {...props} />
     </View>
   );
 }
-
-function QStat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={qsStyles.box}>
-      <Text style={qsStyles.value}>{value}</Text>
-      <Text style={qsStyles.label}>{label}</Text>
-    </View>
-  );
-}
-
-const pfStyles = StyleSheet.create({
-  field: { marginBottom: 14 },
-  label: { fontSize: 12, color: C.muted, marginBottom: 6, fontWeight: '600' },
-  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 12 },
-  input: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.text },
-  suffix: { fontSize: 13, color: C.muted },
-});
-
-const qsStyles = StyleSheet.create({
-  box: { flex: 1, alignItems: 'center' },
-  value: { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 2 },
-  label: { fontSize: 11, color: C.muted },
-});
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   scroll: { padding: 16, paddingBottom: 40 },
-  avatarCard: { alignItems: 'center', marginBottom: 16 },
-  avatarCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: C.primary + '33', borderWidth: 3, borderColor: C.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  avatarText: { fontSize: 24, fontWeight: '800', color: C.primary },
-  avatarName: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 4 },
-  avatarEmail: { fontSize: 13, color: C.muted, marginBottom: 10 },
-  planBadge: { backgroundColor: C.amber + '22', borderRadius: R.full, paddingHorizontal: 14, paddingVertical: 5, borderWidth: 1, borderColor: C.amber + '55', marginBottom: 16 },
-  planBadgeText: { fontSize: 13, color: C.amber, fontWeight: '700' },
-  quickStats: { flexDirection: 'row', width: '100%', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 14 },
-  qstatDiv: { width: 1, backgroundColor: C.border },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 14 },
-  optionRow: { flexDirection: 'row', gap: 8 },
-  optionBtn: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingVertical: 10, alignItems: 'center', backgroundColor: C.bg },
-  optionActive: { borderColor: C.primary, backgroundColor: C.primary + '18' },
-  optionText: { fontSize: 12, color: C.muted, fontWeight: '600', textAlign: 'center' },
-  activityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
-  activityRowActive: { },
-  activityLabel: { fontSize: 14, color: C.text },
-  saveBtn: { backgroundColor: C.primary, borderRadius: R.md, paddingVertical: 15, alignItems: 'center' },
-  saveBtnDone: { backgroundColor: C.green },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  error: { color: C.red, fontSize: 13, marginBottom: 12, backgroundColor: C.red + '18', borderRadius: R.md, padding: 10 },
+  statsCard: { marginBottom: 16 },
+  statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  statLabel: { fontSize: 13, color: C.muted },
+  statVal: { fontSize: 13, fontWeight: '700', color: C.text },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 12 },
+  field: { marginBottom: 12 },
+  fieldLabel: { fontSize: 13, color: C.muted, marginBottom: 5, fontWeight: '600' },
+  input: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: C.text },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  chip: { borderWidth: 1, borderColor: C.border, borderRadius: R.full, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: C.card },
+  chipActive: { borderColor: C.primary, backgroundColor: C.primary + '22' },
+  chipText: { fontSize: 13, color: C.muted, fontWeight: '500' },
+  chipTextActive: { color: C.primary, fontWeight: '700' },
+  saveBtn: { backgroundColor: C.primary, borderRadius: R.md, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
+  saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

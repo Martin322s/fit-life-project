@@ -28,4 +28,5 @@ export const KEYS = {
   PROFILE: 'fitlife-profile',
   WEIGHT_LOG: 'fitlife-weight-log',
   FOOD_LOG: 'fitlife-food-log',
+  TOKEN: 'fitlife-token',
 } as const;

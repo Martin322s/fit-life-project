@@ -10,12 +10,12 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { useRouter, Link } from 'expo-router';
-import { storage, KEYS } from '@/src/services/storage';
+import { Link } from 'expo-router';
+import { useAuth } from '@/src/context/AuthContext';
 import { C, R } from '@/src/theme';
 
 export default function Login() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -29,16 +29,14 @@ export default function Login() {
     }
     setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 900));
-
-    await storage.set(KEYS.AUTH, {
-      email: email.trim(),
-      name: 'Мартин Иванов',
-      loggedInAt: new Date().toISOString(),
-    });
-
-    setLoading(false);
-    router.replace('/(tabs)/dashboard');
+    try {
+      await login(email.trim().toLowerCase(), password);
+      // Guard in _layout.tsx will redirect to dashboard automatically
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Грешен email или парола.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,124 +118,26 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  logo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
-    gap: 8,
-  },
-  logoIcon: {
-    fontSize: 28,
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: C.text,
-    letterSpacing: -0.5,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: C.text,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: C.muted,
-    textAlign: 'center',
-    marginBottom: 28,
-  },
-  error: {
-    color: C.red,
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 16,
-    backgroundColor: C.red + '18',
-    borderRadius: R.md,
-    padding: 10,
-  },
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 13,
-    color: C.muted,
-    marginBottom: 6,
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: R.md,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 15,
-    color: C.text,
-  },
-  passWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: R.md,
-    paddingHorizontal: 14,
-  },
-  eye: {
-    paddingLeft: 10,
-    paddingVertical: 13,
-  },
-  eyeText: {
-    fontSize: 16,
-  },
-  forgotRow: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-    marginTop: 4,
-  },
-  forgotText: {
-    fontSize: 13,
-    color: C.primary,
-    fontWeight: '600',
-  },
-  btn: {
-    backgroundColor: C.primary,
-    borderRadius: R.md,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    color: C.muted,
-  },
-  footerLink: {
-    fontSize: 14,
-    color: C.primary,
-    fontWeight: '600',
-  },
+  root: { flex: 1, backgroundColor: C.bg },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  logo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 32, gap: 8 },
+  logoIcon: { fontSize: 28 },
+  logoText: { fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 },
+  title: { fontSize: 24, fontWeight: '700', color: C.text, textAlign: 'center', marginBottom: 6 },
+  subtitle: { fontSize: 14, color: C.muted, textAlign: 'center', marginBottom: 28 },
+  error: { color: C.red, fontSize: 13, textAlign: 'center', marginBottom: 16, backgroundColor: C.red + '18', borderRadius: R.md, padding: 10 },
+  field: { marginBottom: 16 },
+  label: { fontSize: 13, color: C.muted, marginBottom: 6, fontWeight: '600' },
+  input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: C.text },
+  passWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14 },
+  eye: { paddingLeft: 10, paddingVertical: 13 },
+  eyeText: { fontSize: 16 },
+  forgotRow: { alignSelf: 'flex-end', marginBottom: 24, marginTop: 4 },
+  forgotText: { fontSize: 13, color: C.primary, fontWeight: '600' },
+  btn: { backgroundColor: C.primary, borderRadius: R.md, paddingVertical: 15, alignItems: 'center', marginBottom: 24 },
+  btnDisabled: { opacity: 0.6 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  footer: { flexDirection: 'row', justifyContent: 'center' },
+  footerText: { fontSize: 14, color: C.muted },
+  footerLink: { fontSize: 14, color: C.primary, fontWeight: '600' },
 });

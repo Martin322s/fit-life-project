@@ -1,71 +1,128 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Card } from '@/src/components/Card';
 import { ProgressBar } from '@/src/components/ProgressBar';
 import { C, R } from '@/src/theme';
-import {
-  user,
-  calories,
-  macros,
-  water,
-  steps,
-  todayMeals,
-} from '@/src/data/dashboardData';
+import { useAuth, getInitials, getDisplayName } from '@/src/context/AuthContext';
+import { mealsApi, isToday, sumCalories, sumMacros, type ApiMeal } from '@/src/services/mealsApi';
+import { progressApi, type ApiProgressEntry } from '@/src/services/progressApi';
+import { profileApi, type ApiProfile } from '@/src/services/profileApi';
+import { hydrationApi } from '@/src/services/hydrationApi';
+
+const DEFAULT_GOAL = 2000;
+const DEFAULT_MACROS = { protein: 150, carbs: 200, fat: 65 };
+
+function calcBmi(weightKg: number, heightCm: number) {
+  return +(weightKg / ((heightCm / 100) ** 2)).toFixed(1);
+}
 
 export default function Dashboard() {
-  const calPct = Math.min(100, Math.round((calories.eaten / calories.target) * 100));
-  const today = new Date().toLocaleDateString('bg-BG', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const [meals, setMeals]       = useState<ApiMeal[]>([]);
+  const [progress, setProgress] = useState<ApiProgressEntry[]>([]);
+  const [profile, setProfile]   = useState<ApiProfile | null>(null);
+  const [hydrationMl, setHydrationMl] = useState(0);
+  const [loading, setLoading]   = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const [m, p, prof, hydration] = await Promise.all([
+        mealsApi.list(),
+        progressApi.list(),
+        profileApi.get().catch(() => null as { profile: ApiProfile } | null),
+        hydrationApi.getToday().catch(() => ({ items: [], totalMl: 0 })),
+      ]);
+      const uid = user?.id;
+      setMeals(uid ? m.items.filter(x => x.userId === uid) : m.items);
+      setProgress(uid ? p.items.filter(x => x.userId === uid) : p.items);
+      setProfile(prof?.profile ?? null);
+      setHydrationMl(hydration.totalMl);
+    } catch {}
+    finally { setLoading(false); setRefreshing(false); }
+  }, [user?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const onRefresh = () => { setRefreshing(true); load(true); };
+
+  const today = new Date().toLocaleDateString('bg-BG', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const todayMeals = meals.filter(m => isToday(m.createdAt))
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const todayCalories = sumCalories(todayMeals);
+  const todayMacros   = sumMacros(todayMeals);
+
+  const goalCalories = profile?.caloriesTarget ?? DEFAULT_GOAL;
+  const proteinGoal  = profile?.proteinTarget  ?? DEFAULT_MACROS.protein;
+  const carbsGoal    = profile?.carbsTarget    ?? DEFAULT_MACROS.carbs;
+  const fatGoal      = profile?.fatTarget      ?? DEFAULT_MACROS.fat;
+  const remaining    = Math.max(0, goalCalories - todayCalories);
+  const calPct       = Math.min(100, Math.round((todayCalories / goalCalories) * 100));
+
+  const progressSorted = [...progress]
+    .filter(p => p.weightKg != null)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const currentWeight = progressSorted[0]?.weightKg ?? null;
+
+  const bmi = currentWeight && profile?.heightCm
+    ? calcBmi(currentWeight, profile.heightCm)
+    : null;
+
+  const displayName = user ? getDisplayName(user) : '';
+  const initials    = user ? getInitials(user) : '?';
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <View style={styles.center}><ActivityIndicator color={C.primary} size="large" /></View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Добро утро, {user.name.split(' ')[0]}! 👋</Text>
+            <Text style={styles.greeting}>Здравей, {user?.firstName ?? displayName.split(' ')[0]}! 👋</Text>
             <Text style={styles.date}>{today}</Text>
           </View>
-          <View style={styles.avatarWrap}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{user.initials}</Text>
-            </View>
-            <View style={styles.streakBadge}>
-              <Text style={styles.streakText}>🔥{user.streak}</Text>
-            </View>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
         </View>
 
-        {/* Quick Stats Row */}
+        {/* Quick Stats */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll}>
-          <QuickStat label="Калории" value={`${calories.remaining}`} sub="оставащи" color={C.primary} />
-          <QuickStat label="Вода" value={`${water.glasses}/${water.target}`} sub="чаши" color={C.cyan} />
-          <QuickStat label="Стъпки" value={`${steps.current.toLocaleString()}`} sub={`от ${steps.target.toLocaleString()}`} color={C.purple} />
+          <QuickStat label="Оставащи ккал" value={`${remaining}`} sub="ккал" color={remaining > 0 ? C.primary : C.red} />
+          <QuickStat label="Изядени" value={`${todayCalories}`} sub={`от ${goalCalories} ккал`} color={C.green} />
+          <QuickStat label="Вода" value={`${Math.round(hydrationMl / 100) / 10}`} sub="л днес" color={C.cyan} />
+          {currentWeight && <QuickStat label="Тегло" value={`${currentWeight}`} sub="кг" color={C.amber} />}
+          {bmi && <QuickStat label="ИТМ" value={`${bmi}`} sub="индекс" color={C.purple} />}
         </ScrollView>
 
-        {/* Calorie Ring Card */}
+        {/* Calorie Ring */}
         <Card style={styles.ringCard}>
           <View style={styles.ringRow}>
-            <View style={[styles.ring, { borderColor: C.primary }]}>
+            <View style={[styles.ring, { borderColor: calPct >= 100 ? C.red : C.primary }]}>
               <Text style={styles.ringPct}>{calPct}%</Text>
               <Text style={styles.ringLabel}>от целта</Text>
             </View>
             <View style={styles.ringStats}>
-              <RingStat label="Изядени" value={`${calories.eaten} ккал`} color={C.primary} />
-              <RingStat label="Изгорени" value={`${calories.burned} ккал`} color={C.green} />
-              <RingStat label="Оставащи" value={`${calories.remaining} ккал`} color={C.amber} />
-              <RingStat label="Цел" value={`${calories.target} ккал`} color={C.muted} />
+              <RingStat label="Изядени"   value={`${todayCalories} ккал`} color={C.primary} />
+              <RingStat label="Оставащи"  value={`${remaining} ккал`}     color={C.green} />
+              <RingStat label="Цел"       value={`${goalCalories} ккал`}  color={C.muted} />
             </View>
           </View>
         </Card>
@@ -73,69 +130,53 @@ export default function Dashboard() {
         {/* Macros */}
         <Card>
           <Text style={styles.cardTitle}>Макронутриенти</Text>
-          {macros.map(m => (
-            <ProgressBar key={m.label} {...m} />
-          ))}
-        </Card>
-
-        {/* Water */}
-        <Card style={styles.waterCard}>
-          <View style={styles.waterHeader}>
-            <Text style={styles.cardTitle}>Вода 💧</Text>
-            <Text style={styles.waterCount}>{water.glasses}/{water.target} чаши</Text>
-          </View>
-          <View style={styles.glassRow}>
-            {Array.from({ length: water.target }).map((_, i) => (
-              <View
-                key={i}
-                style={[styles.glass, i < water.glasses && styles.glassFull]}
-              />
-            ))}
-          </View>
-          <Pressable style={styles.waterBtn}>
-            <Text style={styles.waterBtnText}>+ Добави чаша</Text>
-          </Pressable>
+          <ProgressBar label="Протеин"      consumed={Math.round(todayMacros.protein)} target={proteinGoal} color={C.primary} unit="г" />
+          <ProgressBar label="Въглехидрати" consumed={Math.round(todayMacros.carbs)}   target={carbsGoal}   color={C.green}   unit="г" />
+          <ProgressBar label="Мазнини"      consumed={Math.round(todayMacros.fat)}      target={fatGoal}     color={C.amber}   unit="г" />
         </Card>
 
         {/* Today's Meals */}
         <Card>
-          <Text style={styles.cardTitle}>Днешни хранения</Text>
-          {todayMeals.map(meal => (
-            <View key={meal.id} style={styles.mealRow}>
-              <View style={styles.mealDot} />
-              <View style={styles.mealInfo}>
-                <Text style={styles.mealType}>{meal.type}</Text>
-                <Text style={styles.mealName}>{meal.name}</Text>
+          <View style={styles.mealHeader}>
+            <Text style={styles.cardTitle}>Днешни хранения</Text>
+            <Pressable onPress={() => router.push('/(tabs)/calories')}>
+              <Text style={styles.seeAll}>Виж всички →</Text>
+            </Pressable>
+          </View>
+          {todayMeals.length === 0 ? (
+            <Text style={styles.empty}>Все още няма хранения за днес. Добавете от таб Калории.</Text>
+          ) : (
+            todayMeals.slice(0, 4).map(meal => (
+              <View key={meal.id} style={styles.mealRow}>
+                <View style={styles.mealDot} />
+                <View style={styles.mealInfo}>
+                  <Text style={styles.mealName}>{meal.title}</Text>
+                  <Text style={styles.mealTime}>
+                    {new Date(meal.createdAt).toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+                <Text style={styles.mealCal}>{meal.calories} ккал</Text>
               </View>
-              <Text style={styles.mealCal}>{meal.calories} ккал</Text>
-            </View>
-          ))}
-          <Pressable style={styles.addMealBtn}>
-            <Text style={styles.addMealText}>+ Добави хранене</Text>
-          </Pressable>
+            ))
+          )}
         </Card>
 
-        {/* Steps Progress */}
-        <Card>
-          <Text style={styles.cardTitle}>Стъпки 👟</Text>
-          <View style={styles.stepsRow}>
-            <Text style={styles.stepsValue}>{steps.current.toLocaleString()}</Text>
-            <Text style={styles.stepsMuted}>/ {steps.target.toLocaleString()}</Text>
-          </View>
-          <View style={styles.stepsTrack}>
-            <View
-              style={[
-                styles.stepsFill,
-                { width: `${Math.min(100, (steps.current / steps.target) * 100)}%` as any },
-              ]}
-            />
-          </View>
-          <Text style={styles.stepsSub}>
-            {steps.target - steps.current > 0
-              ? `Остават ${(steps.target - steps.current).toLocaleString()} стъпки`
-              : 'Целта е постигната! 🎉'}
-          </Text>
-        </Card>
+        {/* Weight progress */}
+        {progressSorted.length >= 2 && profile?.goalWeight && (
+          <Card>
+            <Text style={styles.cardTitle}>Прогрес на теглото</Text>
+            <View style={styles.weightRow}>
+              <View style={styles.weightStat}>
+                <Text style={styles.weightVal}>{currentWeight} кг</Text>
+                <Text style={styles.weightLbl}>Текущо</Text>
+              </View>
+              <View style={styles.weightStat}>
+                <Text style={[styles.weightVal, { color: C.green }]}>{profile.goalWeight} кг</Text>
+                <Text style={styles.weightLbl}>Цел</Text>
+              </View>
+            </View>
+          </Card>
+        )}
 
       </ScrollView>
     </SafeAreaView>
@@ -165,16 +206,7 @@ function RingStat({ label, value, color }: { label: string; value: string; color
 }
 
 const qStyles = StyleSheet.create({
-  card: {
-    backgroundColor: C.card,
-    borderRadius: R.lg,
-    padding: 14,
-    marginRight: 10,
-    minWidth: 120,
-    borderTopWidth: 3,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
+  card: { backgroundColor: C.card, borderRadius: R.lg, padding: 14, marginRight: 10, minWidth: 120, borderTopWidth: 3, borderWidth: 1, borderColor: C.border },
   label: { fontSize: 11, color: C.muted, marginBottom: 4 },
   value: { fontSize: 20, fontWeight: '700', color: C.text },
   sub: { fontSize: 11, color: C.muted, marginTop: 2 },
@@ -190,127 +222,31 @@ const rStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   scroll: { padding: 16, paddingBottom: 32 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   greeting: { fontSize: 20, fontWeight: '700', color: C.text },
   date: { fontSize: 13, color: C.muted, marginTop: 2, textTransform: 'capitalize' },
-  avatarWrap: { position: 'relative' },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: C.primary + '33',
-    borderWidth: 2,
-    borderColor: C.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.primary + '33', borderWidth: 2, borderColor: C.primary, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 14, fontWeight: '700', color: C.primary },
-  streakBadge: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    backgroundColor: C.card,
-    borderRadius: R.full,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  streakText: { fontSize: 10, fontWeight: '700' },
   statsScroll: { marginBottom: 16 },
   ringCard: { marginBottom: 16 },
   ringRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  ring: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  ring: { width: 110, height: 110, borderRadius: 55, borderWidth: 8, justifyContent: 'center', alignItems: 'center' },
   ringPct: { fontSize: 22, fontWeight: '800', color: C.text },
   ringLabel: { fontSize: 11, color: C.muted },
   ringStats: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 14 },
-  waterCard: { marginBottom: 0 },
-  waterHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  waterCount: { fontSize: 13, color: C.cyan, fontWeight: '600' },
-  glassRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 14,
-    flexWrap: 'wrap',
-  },
-  glass: {
-    width: 28,
-    height: 36,
-    borderRadius: 6,
-    backgroundColor: C.border,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  glassFull: {
-    backgroundColor: C.cyan + '55',
-    borderColor: C.cyan,
-  },
-  waterBtn: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: C.cyan,
-    borderRadius: R.md,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  waterBtnText: { fontSize: 13, color: C.cyan, fontWeight: '600' },
-  mealRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 10,
-  },
-  mealDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: C.primary,
-  },
+  mealHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  seeAll: { fontSize: 13, color: C.primary, fontWeight: '600' },
+  empty: { fontSize: 13, color: C.muted, fontStyle: 'italic' },
+  mealRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
+  mealDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.primary },
   mealInfo: { flex: 1 },
-  mealType: { fontSize: 11, color: C.muted },
   mealName: { fontSize: 13, color: C.text, fontWeight: '500' },
+  mealTime: { fontSize: 11, color: C.muted },
   mealCal: { fontSize: 13, color: C.primary, fontWeight: '600' },
-  addMealBtn: {
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: R.md,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  addMealText: { fontSize: 13, color: C.muted, fontWeight: '600' },
-  stepsRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 8 },
-  stepsValue: { fontSize: 28, fontWeight: '800', color: C.text },
-  stepsMuted: { fontSize: 14, color: C.muted },
-  stepsTrack: {
-    height: 8,
-    backgroundColor: C.border,
-    borderRadius: R.full,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  stepsFill: {
-    height: '100%',
-    backgroundColor: C.purple,
-    borderRadius: R.full,
-  },
-  stepsSub: { fontSize: 12, color: C.muted },
+  weightRow: { flexDirection: 'row', gap: 24 },
+  weightStat: {},
+  weightVal: { fontSize: 22, fontWeight: '800', color: C.text },
+  weightLbl: { fontSize: 12, color: C.muted },
 });

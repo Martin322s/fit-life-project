@@ -1,195 +1,146 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-  TextInput,
+  View, Text, ScrollView, StyleSheet, TextInput,
+  ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackHeader } from '@/src/components/BackHeader';
 import { Card } from '@/src/components/Card';
 import { C, R } from '@/src/theme';
-import { products, categories, type Product } from '@/src/data/productsData';
+import { productsApi, type ApiProduct } from '@/src/services/contentApi';
 
 export default function Products() {
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('Всички');
-  const [selected, setSelected] = useState<Product | null>(null);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set(products.filter(p => p.favorite).map(p => p.id)));
+  const [items, setItems]     = useState<ApiProduct[]>([]);
+  const [search, setSearch]   = useState('');
+  const [page, setPage]       = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const filtered = products.filter(p => {
-    const matchCat = category === 'Всички' || p.category === category;
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const load = useCallback(async (p: number, q: string, silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await productsApi.list({ page: p, limit: 20, search: q || undefined });
+      if (p === 1) setItems(res.items);
+      else setItems(prev => [...prev, ...res.items]);
+      setTotalPages(res.totalPages);
+    } catch {}
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
 
-  const toggleFav = (id: string) => {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  useEffect(() => { load(1, search); }, [load, search]);
+
+  const onRefresh = () => { setRefreshing(true); setPage(1); load(1, search, true); };
+
+  const loadMore = () => {
+    if (page < totalPages && !loading) {
+      const next = page + 1;
+      setPage(next);
+      load(next, search, true);
+    }
   };
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <BackHeader title="Продукти" />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <View style={styles.searchBox}>
+        <TextInput
+          style={styles.searchInput}
+          value={search}
+          onChangeText={t => { setSearch(t); setPage(1); }}
+          placeholder="Търсете продукт…"
+          placeholderTextColor={C.muted}
+          clearButtonMode="while-editing"
+        />
+      </View>
 
-        {/* Search */}
-        <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Търси продукт..."
-            placeholderTextColor={C.muted}
-            autoCorrect={false}
-          />
-          {search.length > 0 && (
-            <Pressable onPress={() => setSearch('')}>
-              <Text style={styles.clearSearch}>✕</Text>
-            </Pressable>
+      {loading && page === 1 ? (
+        <View style={styles.center}><ActivityIndicator color={C.primary} size="large" /></View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
+          onMomentumScrollEnd={({ nativeEvent }) => {
+            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 40) loadMore();
+          }}
+          scrollEventThrottle={400}
+        >
+          {items.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyEmoji}>📦</Text>
+              <Text style={styles.emptyText}>{search ? `Няма резултати за "${search}"` : 'Няма продукти'}</Text>
+            </View>
+          ) : (
+            items.map(item => (
+              <Card key={item.id} style={styles.card}>
+                <View style={styles.row}>
+                  <View style={styles.info}>
+                    {item.category ? <Text style={styles.tag}>{item.category}</Text> : null}
+                    <Text style={styles.title}>{item.name}</Text>
+                    {item.brand ? <Text style={styles.brand}>{item.brand}</Text> : null}
+                    <Text style={styles.serving}>
+                      {item.servingSize ? `Порция: ${item.servingSize}${item.servingUnit ?? 'г'}` : ''}
+                    </Text>
+                  </View>
+                  {item.calories ? (
+                    <View style={styles.calBadge}>
+                      <Text style={styles.calVal}>{item.calories}</Text>
+                      <Text style={styles.calUnit}>ккал</Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {(item.protein != null || item.carbs != null || item.fat != null) && (
+                  <View style={styles.macroRow}>
+                    {item.protein != null && <MacroBadge label="Протеин" value={item.protein} color={C.primary} />}
+                    {item.carbs   != null && <MacroBadge label="Въглехидрати" value={item.carbs} color={C.green} />}
+                    {item.fat     != null && <MacroBadge label="Мазнини" value={item.fat}     color={C.amber} />}
+                  </View>
+                )}
+              </Card>
+            ))
           )}
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillValue}>{products.length}</Text>
-            <Text style={styles.statPillLabel}>продукта</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillValue}>{favorites.size}</Text>
-            <Text style={styles.statPillLabel}>любими</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillValue}>{categories.length - 1}</Text>
-            <Text style={styles.statPillLabel}>категории</Text>
-          </View>
-        </View>
-
-        {/* Category Filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catRow}>
-          {categories.map(cat => (
-            <Pressable
-              key={cat}
-              style={[styles.catTab, category === cat && styles.catTabActive]}
-              onPress={() => setCategory(cat)}
-            >
-              <Text style={[styles.catTabText, category === cat && styles.catTabTextActive]}>{cat}</Text>
-            </Pressable>
-          ))}
+          {loading && page > 1 && <View style={styles.loadMore}><ActivityIndicator color={C.primary} /></View>}
         </ScrollView>
-
-        {/* Selected Product Detail */}
-        {selected && (
-          <Card style={styles.detailCard}>
-            <View style={styles.detailHeader}>
-              <View style={styles.detailInfo}>
-                <Text style={styles.detailName}>{selected.name}</Text>
-                <Text style={styles.detailBrand}>{selected.brand}</Text>
-              </View>
-              <Pressable onPress={() => setSelected(null)}>
-                <Text style={styles.detailClose}>✕</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.detailServing}>На {selected.serving}</Text>
-            <View style={styles.detailMacros}>
-              <MacroBox label="Калории" value={`${selected.calories}`} unit="ккал" color={C.primary} />
-              <MacroBox label="Протеин" value={`${selected.protein}`} unit="г" color={C.cyan} />
-              <MacroBox label="Въглехидрати" value={`${selected.carbs}`} unit="г" color={C.green} />
-              <MacroBox label="Мазнини" value={`${selected.fat}`} unit="г" color={C.amber} />
-            </View>
-          </Card>
-        )}
-
-        {/* Product List */}
-        <Text style={styles.resultsLabel}>{filtered.length} резултата</Text>
-        {filtered.map(product => (
-          <Pressable key={product.id} onPress={() => setSelected(product)}>
-            <View style={[styles.productRow, selected?.id === product.id && styles.productRowActive]}>
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productMeta}>{product.brand} · {product.category} · {product.serving}</Text>
-              </View>
-              <View style={styles.productRight}>
-                <Text style={styles.productCal}>{product.calories}</Text>
-                <Text style={styles.productCalUnit}>ккал</Text>
-              </View>
-              <Pressable onPress={() => toggleFav(product.id)} style={styles.favBtn}>
-                <Text style={{ fontSize: 16 }}>{favorites.has(product.id) ? '❤️' : '🤍'}</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        ))}
-
-        {filtered.length === 0 && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={styles.emptyText}>Няма намерени продукти</Text>
-          </View>
-        )}
-      </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-function MacroBox({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {
+function MacroBadge({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <View style={mbStyles.box}>
-      <Text style={[mbStyles.value, { color }]}>{value}</Text>
-      <Text style={mbStyles.unit}>{unit}</Text>
-      <Text style={mbStyles.label}>{label}</Text>
+    <View style={[mbS.badge, { backgroundColor: color + '22' }]}>
+      <Text style={[mbS.text, { color }]}>{label}: {Math.round(value)}г</Text>
     </View>
   );
 }
 
-const mbStyles = StyleSheet.create({
-  box: { flex: 1, alignItems: 'center', backgroundColor: C.bg, borderRadius: R.md, padding: 10 },
-  value: { fontSize: 18, fontWeight: '800' },
-  unit: { fontSize: 11, color: C.muted },
-  label: { fontSize: 10, color: C.muted, marginTop: 2 },
+const mbS = StyleSheet.create({
+  badge: { borderRadius: R.full, paddingHorizontal: 8, paddingVertical: 3 },
+  text: { fontSize: 11, fontWeight: '600' },
 });
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  searchBox: { paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  searchInput: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: C.text },
   scroll: { padding: 16, paddingBottom: 32 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 12, marginBottom: 14 },
-  searchIcon: { fontSize: 16, marginRight: 8 },
-  searchInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: C.text },
-  clearSearch: { fontSize: 14, color: C.muted, paddingLeft: 8 },
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statPill: { flex: 1, backgroundColor: C.card, borderRadius: R.md, borderWidth: 1, borderColor: C.border, padding: 10, alignItems: 'center' },
-  statPillValue: { fontSize: 18, fontWeight: '700', color: C.text },
-  statPillLabel: { fontSize: 11, color: C.muted },
-  catRow: { marginBottom: 16 },
-  catTab: { borderWidth: 1, borderColor: C.border, borderRadius: R.full, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8, backgroundColor: C.card },
-  catTabActive: { borderColor: C.primary, backgroundColor: C.primary + '22' },
-  catTabText: { fontSize: 13, color: C.muted, fontWeight: '600' },
-  catTabTextActive: { color: C.primary },
-  detailCard: { marginBottom: 16, backgroundColor: C.card },
-  detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  detailInfo: { flex: 1 },
-  detailName: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 2 },
-  detailBrand: { fontSize: 12, color: C.muted },
-  detailClose: { fontSize: 18, color: C.muted, paddingLeft: 12 },
-  detailServing: { fontSize: 12, color: C.muted, marginBottom: 14 },
-  detailMacros: { flexDirection: 'row', gap: 8 },
-  resultsLabel: { fontSize: 12, color: C.muted, marginBottom: 10 },
-  productRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: R.md, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 8, gap: 10 },
-  productRowActive: { borderColor: C.primary },
-  productInfo: { flex: 1 },
-  productName: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 2 },
-  productMeta: { fontSize: 11, color: C.muted },
-  productRight: { alignItems: 'center' },
-  productCal: { fontSize: 16, fontWeight: '700', color: C.primary },
-  productCalUnit: { fontSize: 10, color: C.muted },
-  favBtn: { padding: 4 },
-  empty: { alignItems: 'center', paddingVertical: 40 },
-  emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyText: { fontSize: 14, color: C.muted },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyBox: { alignItems: 'center', paddingVertical: 40 },
+  emptyEmoji: { fontSize: 36, marginBottom: 10 },
+  emptyText: { fontSize: 14, color: C.muted, textAlign: 'center' },
+  loadMore: { alignItems: 'center', paddingVertical: 16 },
+  card: { marginBottom: 12 },
+  row: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  info: { flex: 1 },
+  tag: { fontSize: 11, color: C.cyan, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase' },
+  title: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 2 },
+  brand: { fontSize: 12, color: C.muted, marginBottom: 2 },
+  serving: { fontSize: 12, color: C.muted },
+  calBadge: { alignItems: 'center', justifyContent: 'center', backgroundColor: C.primary + '22', borderRadius: R.md, paddingHorizontal: 10, paddingVertical: 6, minWidth: 52 },
+  calVal: { fontSize: 16, fontWeight: '800', color: C.primary },
+  calUnit: { fontSize: 10, color: C.muted },
+  macroRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
 });

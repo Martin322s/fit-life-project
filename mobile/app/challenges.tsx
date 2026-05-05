@@ -1,100 +1,167 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Pressable,
+  View, Text, ScrollView, StyleSheet, Pressable,
+  ActivityIndicator, RefreshControl, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackHeader } from '@/src/components/BackHeader';
 import { Card } from '@/src/components/Card';
 import { C, R } from '@/src/theme';
-import { activeChallenges, upcomingChallenges, leaderboard } from '@/src/data/challengesData';
+import { useAuth } from '@/src/context/AuthContext';
+import { challengesApi, userChallengesApi, type ApiChallenge, type ApiUserChallenge } from '@/src/services/contentApi';
 
 export default function Challenges() {
+  const { user } = useAuth();
+
+  const [available, setAvailable]       = useState<ApiChallenge[]>([]);
+  const [userChallenges, setUserChallenges] = useState<ApiUserChallenge[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [refreshing, setRefreshing]     = useState(false);
+  const [joiningId, setJoiningId]       = useState<string | null>(null);
+  const [abandoningId, setAbandoningId] = useState<string | null>(null);
+
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const [ch, uc] = await Promise.all([
+        challengesApi.list({ limit: 30 }),
+        userChallengesApi.list(),
+      ]);
+      setAvailable(ch.items);
+      const uid = user?.id;
+      setUserChallenges(uid ? uc.items.filter(x => x.userId === uid) : uc.items);
+    } catch {}
+    finally { setLoading(false); setRefreshing(false); }
+  }, [user?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const onRefresh = () => { setRefreshing(true); load(true); };
+
+  const activeUserChallenges = userChallenges.filter(uc => uc.status === 'active');
+  const joinedIds = new Set(userChallenges.map(uc => uc.challengeId));
+  const notJoined = available.filter(c => !joinedIds.has(c.id));
+
+  const handleJoin = async (challenge: ApiChallenge) => {
+    setJoiningId(challenge.id);
+    try {
+      await userChallengesApi.join(challenge.id);
+      await load(true);
+    } catch (err) {
+      Alert.alert('Грешка', err instanceof Error ? err.message : 'Грешка при присъединяване.');
+    } finally {
+      setJoiningId(null);
+    }
+  };
+
+  const handleAbandon = (uc: ApiUserChallenge) => {
+    Alert.alert('Изостави', `Изоставяне на "${uc.challenge.title}"?`, [
+      { text: 'Отказ', style: 'cancel' },
+      {
+        text: 'Изостави',
+        style: 'destructive',
+        onPress: async () => {
+          setAbandoningId(uc.id);
+          try { await userChallengesApi.abandon(uc.id); await load(true); }
+          catch {}
+          finally { setAbandoningId(null); }
+        },
+      },
+    ]);
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top']}>
+        <View style={styles.center}><ActivityIndicator color={C.primary} size="large" /></View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <BackHeader title="Предизвикателства" />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* Active Challenges */}
-        <Text style={styles.section}>🔥 Активни предизвикателства</Text>
-        {activeChallenges.map(ch => {
-          const pct = Math.round((ch.progress / ch.total) * 100);
-          return (
-            <Card key={ch.id} style={styles.challengeCard}>
-              <View style={styles.challengeHeader}>
-                <Text style={styles.challengeIcon}>{ch.icon}</Text>
-                <View style={styles.challengeInfo}>
-                  <Text style={styles.challengeName}>{ch.name}</Text>
-                  <Text style={styles.challengeDesc}>{ch.desc}</Text>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
+      >
+        {/* Active challenges */}
+        {activeUserChallenges.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Активни ({activeUserChallenges.length})</Text>
+            {activeUserChallenges.map(uc => (
+              <Card key={uc.id} style={[styles.card, styles.activeCard]}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.info}>
+                    <Text style={styles.tag}>АКТИВНО</Text>
+                    <Text style={styles.title}>{uc.challenge.title}</Text>
+                    {uc.challenge.description ? <Text style={styles.desc}>{uc.challenge.description}</Text> : null}
+                  </View>
                 </View>
-              </View>
-              <View style={styles.challengeProgress}>
-                <View style={styles.progressHeader}>
-                  <Text style={styles.progressLabel}>
-                    {ch.progress} / {ch.total} дни
+                {uc.challenge.targetValue != null && (
+                  <>
+                    <View style={styles.progressRow}>
+                      <Text style={styles.progressLabel}>Прогрес: {uc.progressValue} / {uc.challenge.targetValue} {uc.challenge.targetUnit ?? ''}</Text>
+                      <Text style={styles.progressPct}>{Math.round((uc.progressValue / uc.challenge.targetValue) * 100)}%</Text>
+                    </View>
+                    <View style={styles.progressTrack}>
+                      <View style={[styles.progressFill, { width: `${Math.min(100, (uc.progressValue / uc.challenge.targetValue) * 100)}%` as any }]} />
+                    </View>
+                  </>
+                )}
+                <View style={styles.actions}>
+                  <Pressable
+                    style={[styles.abandonBtn, abandoningId === uc.id && styles.btnDisabled]}
+                    onPress={() => handleAbandon(uc)}
+                    disabled={abandoningId === uc.id}
+                  >
+                    <Text style={styles.abandonBtnText}>{abandoningId === uc.id ? '…' : 'Изостави'}</Text>
+                  </Pressable>
+                </View>
+              </Card>
+            ))}
+          </>
+        )}
+
+        {/* Available challenges */}
+        {notJoined.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Налични ({notJoined.length})</Text>
+            {notJoined.map(ch => (
+              <Card key={ch.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.info}>
+                    {ch.category   ? <Text style={styles.tag}>{ch.category}</Text>           : null}
+                    <Text style={styles.title}>{ch.title}</Text>
+                    {ch.description ? <Text style={styles.desc}>{ch.description}</Text>      : null}
+                    <View style={styles.metaRow}>
+                      {ch.difficulty  ? <Text style={styles.meta}>{ch.difficulty}</Text>     : null}
+                      {ch.durationDays ? <Text style={styles.meta}>📅 {ch.durationDays} дни</Text> : null}
+                      {ch.reward      ? <Text style={styles.meta}>🏅 {ch.reward}</Text>     : null}
+                    </View>
+                  </View>
+                </View>
+                <Pressable
+                  style={[styles.joinBtn, joiningId === ch.id && styles.btnDisabled]}
+                  onPress={() => handleJoin(ch)}
+                  disabled={joiningId === ch.id}
+                >
+                  <Text style={styles.joinBtnText}>
+                    {joiningId === ch.id ? 'Присъединяване…' : 'Присъедини се'}
                   </Text>
-                  <Text style={[styles.progressPct, { color: C.green }]}>{pct}%</Text>
-                </View>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: C.green }]} />
-                </View>
-              </View>
-              <View style={styles.challengeFooter}>
-                <Text style={styles.challengeReward}>🏅 Награда: {ch.reward}</Text>
-                <Text style={styles.challengeDays}>⏳ {ch.daysLeft} дни остават</Text>
-              </View>
-            </Card>
-          );
-        })}
+                </Pressable>
+              </Card>
+            ))}
+          </>
+        )}
 
-        {/* Upcoming */}
-        <Text style={styles.section}>📅 Предстоящи предизвикателства</Text>
-        {upcomingChallenges.map(ch => (
-          <Card key={ch.id} style={styles.upcomingCard}>
-            <View style={styles.upcomingHeader}>
-              <Text style={styles.challengeIcon}>{ch.icon}</Text>
-              <View style={styles.challengeInfo}>
-                <Text style={styles.challengeName}>{ch.name}</Text>
-                <Text style={styles.challengeDesc}>{ch.desc}</Text>
-              </View>
-            </View>
-            <View style={styles.upcomingFooter}>
-              <View style={styles.upcomingMeta}>
-                <Text style={styles.upcomingDate}>📆 {ch.startDate}</Text>
-                <Text style={styles.upcomingParticipants}>👥 {ch.participants} участника</Text>
-              </View>
-              <Pressable style={styles.joinBtn}>
-                <Text style={styles.joinBtnText}>Запиши се</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.challengeReward}>🏅 Награда: {ch.reward}</Text>
-          </Card>
-        ))}
-
-        {/* Leaderboard */}
-        <Text style={styles.section}>🏆 Класация</Text>
-        <Card>
-          {leaderboard.map(entry => (
-            <View
-              key={entry.rank}
-              style={[styles.leaderRow, entry.isMe && styles.leaderRowMe]}
-            >
-              <Text style={[styles.leaderRank, entry.rank <= 3 && { color: C.amber }]}>
-                {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
-              </Text>
-              <View style={styles.leaderAvatar}>
-                <Text style={styles.leaderAvatarText}>{entry.avatar}</Text>
-              </View>
-              <Text style={[styles.leaderName, entry.isMe && { color: C.primary, fontWeight: '700' }]}>
-                {entry.name}{entry.isMe ? ' (Аз)' : ''}
-              </Text>
-              <Text style={styles.leaderPoints}>{entry.points.toLocaleString()} т.</Text>
-            </View>
-          ))}
-        </Card>
+        {available.length === 0 && userChallenges.length === 0 && (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyEmoji}>🏆</Text>
+            <Text style={styles.emptyText}>Няма налични предизвикателства</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -103,35 +170,29 @@ export default function Challenges() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   scroll: { padding: 16, paddingBottom: 32 },
-  section: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 12, marginTop: 4 },
-  challengeCard: { marginBottom: 12 },
-  challengeHeader: { flexDirection: 'row', gap: 12, marginBottom: 14, alignItems: 'flex-start' },
-  challengeIcon: { fontSize: 28 },
-  challengeInfo: { flex: 1 },
-  challengeName: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 3 },
-  challengeDesc: { fontSize: 13, color: C.muted, lineHeight: 18 },
-  challengeProgress: { marginBottom: 12 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  progressLabel: { fontSize: 12, color: C.muted },
-  progressPct: { fontSize: 12, fontWeight: '700' },
-  progressTrack: { height: 8, backgroundColor: C.border, borderRadius: R.full, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: R.full },
-  challengeFooter: { flexDirection: 'row', justifyContent: 'space-between' },
-  challengeReward: { fontSize: 12, color: C.amber, fontWeight: '600', marginTop: 8 },
-  challengeDays: { fontSize: 12, color: C.muted },
-  upcomingCard: { marginBottom: 12 },
-  upcomingHeader: { flexDirection: 'row', gap: 12, marginBottom: 12, alignItems: 'flex-start' },
-  upcomingFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  upcomingMeta: { gap: 4 },
-  upcomingDate: { fontSize: 12, color: C.muted },
-  upcomingParticipants: { fontSize: 12, color: C.muted },
-  joinBtn: { backgroundColor: C.primary, borderRadius: R.md, paddingHorizontal: 16, paddingVertical: 8 },
-  joinBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  leaderRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
-  leaderRowMe: { backgroundColor: C.primary + '0a', borderRadius: R.md, paddingHorizontal: 8, marginHorizontal: -8 },
-  leaderRank: { fontSize: 16, width: 36, textAlign: 'center', color: C.muted, fontWeight: '700' },
-  leaderAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.border, justifyContent: 'center', alignItems: 'center' },
-  leaderAvatarText: { fontSize: 11, fontWeight: '700', color: C.muted },
-  leaderName: { flex: 1, fontSize: 14, color: C.text },
-  leaderPoints: { fontSize: 13, color: C.amber, fontWeight: '700' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, marginTop: 4 },
+  card: { marginBottom: 12 },
+  activeCard: { borderWidth: 1, borderColor: C.primary + '55' },
+  cardHeader: { marginBottom: 10 },
+  info: {},
+  tag: { fontSize: 11, fontWeight: '700', color: C.primary, marginBottom: 4, textTransform: 'uppercase' },
+  title: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 },
+  desc: { fontSize: 13, color: C.muted, lineHeight: 18, marginBottom: 6 },
+  metaRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  meta: { fontSize: 12, color: C.muted },
+  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  progressLabel: { fontSize: 13, color: C.muted },
+  progressPct: { fontSize: 13, color: C.primary, fontWeight: '700' },
+  progressTrack: { height: 6, backgroundColor: C.border, borderRadius: R.full, overflow: 'hidden', marginBottom: 12 },
+  progressFill: { height: '100%', backgroundColor: C.primary, borderRadius: R.full },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end' },
+  joinBtn: { backgroundColor: C.primary, borderRadius: R.md, paddingVertical: 10, paddingHorizontal: 20, alignItems: 'center' },
+  joinBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  abandonBtn: { borderWidth: 1, borderColor: C.red + '55', borderRadius: R.md, paddingVertical: 8, paddingHorizontal: 16 },
+  abandonBtnText: { color: C.red, fontSize: 13, fontWeight: '600' },
+  btnDisabled: { opacity: 0.5 },
+  emptyBox: { alignItems: 'center', paddingVertical: 48 },
+  emptyEmoji: { fontSize: 36, marginBottom: 10 },
+  emptyText: { fontSize: 14, color: C.muted, textAlign: 'center' },
 });
