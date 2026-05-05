@@ -18,6 +18,7 @@
 .rc-recipe-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--sp-3); }
 .rc-recipe-card { padding: 20px; }
 .rc-featured-inner { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+.rc-filter-grid { display: grid; grid-template-columns: minmax(180px,1fr) 220px 180px; gap: var(--sp-3); }
 
 @media (max-width: 1250px) {
   .rc-top-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -52,6 +53,7 @@
   .rc-avatar { display: none; }
   .rc-top-grid { grid-template-columns: 1fr 1fr; }
   .rc-recipe-grid { grid-template-columns: 1fr; }
+  .rc-filter-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {

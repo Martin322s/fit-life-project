@@ -1,34 +1,37 @@
-import { useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import DashboardSidebar from "../../layout/DashboardLayout/DashboardSidebar";
 import ProductStatCard from "../Products/sections/ProductStatCard";
 import ProfileHeader from "./sections/ProfileHeader";
-import useLocalStorageState from "../../hooks/useLocalStorageState";
+import { getInitials, useAuth } from "../../context/AuthContext";
+import { useProfileData } from "../../hooks/useProfileData";
+import { profileApi } from "../../services/profileApi";
+import type { ApiProfile, ProfileActivityLevel, ProfileGoalType, ProfileGender } from "../../services/profileApi";
+import {
+    calculateBMR,
+    calculateCaloriesForGoal,
+    calculateMacros,
+    calculateTDEE,
+    type GoalType,
+    type Sex,
+} from "../../lib/calculatorUtils";
 
 type ProfileProps = { theme: "dark" | "light"; onToggleTheme: () => void };
 
-const USER = {
-    name: "Мартин Иванов",
-    email: "martin@fitlife.bg",
-    phone: "+359 88 123 4567",
-    city: "София",
-    age: 29,
-    height: 178,
-    weight: 82.4,
-    goalWeight: 78,
-    bodyFat: 16.8,
-    plan: "FitLife Free",
-    joined: "януари 2026",
-    goal: "Рекомпозиция",
-    activity: "Умерено активен",
-    training: "4 силови + 2 разходки",
-    calories: 2550,
-    protein: 165,
-    water: 3.2,
-    streak: 14,
-    checkins: 46,
-    badges: 9,
-    privacy: "Само за мен",
+type FormState = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    gender: ProfileGender | "";
+    age: string;
+    heightCm: string;
+    goalWeight: string;
+    activityLevel: ProfileActivityLevel | "";
+    goalType: ProfileGoalType | "";
+    caloriesTarget: string;
+    proteinTarget: string;
+    carbsTarget: string;
+    fatTarget: string;
 };
 
 const PF_CSS = `
@@ -56,6 +59,16 @@ const PF_CSS = `
 .pf-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
 .pf-info-box { padding: 12px; border-radius: var(--r-lg); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); }
 .pf-list { display: grid; gap: var(--sp-3); }
+.pf-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.pf-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pf-input, .pf-select { width: 100%; box-sizing: border-box; border-radius: var(--r-md); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--color-cream); padding: 11px 12px; outline: none; }
+.pf-select { color-scheme: dark; }
+[data-theme="light"] .pf-select { color-scheme: light; }
+.pf-inline-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.pf-error-box { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: rgba(255,61,87,0.1); border: 1px solid rgba(255,61,87,0.25); }
+.pf-success-box { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.25); }
+.pf-note-box { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+.pf-field-error { color: var(--c-error,#FF3D57); font-size: 0.74rem; margin-top: 2px; }
 @media (max-width: 1280px) {
   .pf-top-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .pf-main-grid, .pf-bottom-grid { grid-template-columns: 1fr; }
@@ -70,7 +83,7 @@ const PF_CSS = `
   .pf-title { font-size: 1rem !important; }
   .pf-header-sub, .pf-avatar { display: none; }
   .pf-edit-btn span { display: none; }
-  .pf-top-grid, .pf-info-grid { grid-template-columns: 1fr; }
+  .pf-top-grid, .pf-info-grid, .pf-form-grid { grid-template-columns: 1fr; }
   .pf-profile-hero { grid-template-columns: 1fr; justify-items: start; }
 }
 @media (max-width: 480px) {
@@ -80,13 +93,210 @@ const PF_CSS = `
 }
 `;
 
-function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [user, setUser] = useLocalStorageState("fitlife-profile-page", USER);
+const ACTIVITY_OPTIONS: { value: ProfileActivityLevel; label: string }[] = [
+    { value: "sedentary", label: "Заседнал" },
+    { value: "light", label: "Леко активен" },
+    { value: "moderate", label: "Умерено активен" },
+    { value: "very", label: "Много активен" },
+];
 
-    const bmi = user.weight / ((user.height / 100) * (user.height / 100));
-    const goalDelta = user.weight - user.goalWeight;
+const GOAL_OPTIONS: { value: ProfileGoalType; label: string }[] = [
+    { value: "lose_weight", label: "Сваляне" },
+    { value: "maintain", label: "Поддържане" },
+    { value: "gain_weight", label: "Покачване" },
+];
+
+type FieldErrors = Partial<Record<keyof FormState, string>>;
+
+function toStringOrEmpty(value: number | null | undefined): string {
+    return value == null ? "" : String(value);
+}
+
+function toNullableNumber(value: string): number | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : Number.NaN;
+}
+
+function mapGoalToCalculator(goalType: ProfileGoalType): GoalType {
+    if (goalType === "maintain") return "maintain_weight";
+    return goalType;
+}
+
+function initialForm(): FormState {
+    return {
+        firstName: "",
+        lastName: "",
+        email: "",
+        gender: "",
+        age: "",
+        heightCm: "",
+        goalWeight: "",
+        activityLevel: "",
+        goalType: "",
+        caloriesTarget: "",
+        proteinTarget: "",
+        carbsTarget: "",
+        fatTarget: "",
+    };
+}
+
+function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
+    const { user, refreshUser } = useAuth();
+    const { profile, isLoading, isSaving, error, saveError, saveSuccess, save, refresh } = useProfileData();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [form, setForm] = useState<FormState>(initialForm);
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    const [recalcError, setRecalcError] = useState<string | null>(null);
+    const [manualTargets, setManualTargets] = useState(false);
+
+    useEffect(() => {
+        if (!profile) return;
+        let cancelled = false;
+        Promise.resolve().then(() => {
+            if (cancelled) return;
+            setForm({
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+                email: profile.email,
+                gender: profile.gender ?? "",
+                age: toStringOrEmpty(profile.age),
+                heightCm: toStringOrEmpty(profile.heightCm),
+                goalWeight: toStringOrEmpty(profile.goalWeight),
+                activityLevel: profile.activityLevel ?? "",
+                goalType: profile.goalType ?? "",
+                caloriesTarget: toStringOrEmpty(profile.caloriesTarget),
+                proteinTarget: toStringOrEmpty(profile.proteinTarget),
+                carbsTarget: toStringOrEmpty(profile.carbsTarget),
+                fatTarget: toStringOrEmpty(profile.fatTarget),
+            });
+            setFieldErrors({});
+            setRecalcError(null);
+            setManualTargets(false);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [profile]);
+
+    const initials = user ? getInitials(user) : "FL";
+    const currentWeight = profile?.currentWeight ?? null;
+
+    const summaryText = useMemo(() => {
+        const age = form.age ? `${form.age} г` : "-";
+        const height = form.heightCm ? `${form.heightCm} см` : "-";
+        const goalWeight = form.goalWeight ? `${form.goalWeight} кг` : "-";
+        return `${age} · ${height} · цел ${goalWeight}`;
+    }, [form.age, form.heightCm, form.goalWeight]);
+
+    const macroSummary = useMemo(() => {
+        const p = form.proteinTarget || "-";
+        const c = form.carbsTarget || "-";
+        const f = form.fatTarget || "-";
+        return `${p}P · ${c}C · ${f}F`;
+    }, [form.proteinTarget, form.carbsTarget, form.fatTarget]);
+
+    const validate = (): FieldErrors => {
+        const errors: FieldErrors = {};
+        const age = toNullableNumber(form.age);
+        const heightCm = toNullableNumber(form.heightCm);
+        const goalWeight = toNullableNumber(form.goalWeight);
+        const caloriesTarget = toNullableNumber(form.caloriesTarget);
+        const proteinTarget = toNullableNumber(form.proteinTarget);
+        const carbsTarget = toNullableNumber(form.carbsTarget);
+        const fatTarget = toNullableNumber(form.fatTarget);
+
+        if (!form.firstName.trim()) errors.firstName = "Името е задължително.";
+        if (!form.lastName.trim()) errors.lastName = "Фамилията е задължителна.";
+        if (!form.gender) errors.gender = "Пол е задължително поле.";
+        if (age == null) errors.age = "Възраст е задължително поле.";
+        if (age != null && (Number.isNaN(age) || age < 10 || age > 100)) errors.age = "Възрастта трябва да е между 10 и 100.";
+        if (heightCm == null) errors.heightCm = "Ръст е задължително поле.";
+        if (heightCm != null && (Number.isNaN(heightCm) || heightCm < 100 || heightCm > 250)) errors.heightCm = "Ръстът трябва да е между 100 и 250 см.";
+        if (goalWeight != null && (Number.isNaN(goalWeight) || goalWeight < 30 || goalWeight > 300)) errors.goalWeight = "Целевото тегло трябва да е между 30 и 300 кг.";
+        if (!form.activityLevel) errors.activityLevel = "Ниво на активност е задължително поле.";
+        if (!form.goalType) errors.goalType = "Цел е задължително поле.";
+        if (caloriesTarget != null && (Number.isNaN(caloriesTarget) || caloriesTarget < 0)) errors.caloriesTarget = "Калорийният таргет не може да е отрицателен.";
+        if (proteinTarget != null && (Number.isNaN(proteinTarget) || proteinTarget < 0)) errors.proteinTarget = "Протеинът не може да е отрицателен.";
+        if (carbsTarget != null && (Number.isNaN(carbsTarget) || carbsTarget < 0)) errors.carbsTarget = "Въглехидратите не могат да са отрицателни.";
+        if (fatTarget != null && (Number.isNaN(fatTarget) || fatTarget < 0)) errors.fatTarget = "Мазнините не могат да са отрицателни.";
+
+        return errors;
+    };
+
+    const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+        setForm((prev) => ({ ...prev, [key]: value }));
+        setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
+        if (key === "caloriesTarget" || key === "proteinTarget" || key === "carbsTarget" || key === "fatTarget") {
+            setManualTargets(true);
+        }
+    };
+
+    const onRecalculateTargets = () => {
+        setRecalcError(null);
+        const age = toNullableNumber(form.age);
+        const heightCm = toNullableNumber(form.heightCm);
+
+        if (!form.gender || !form.activityLevel || !form.goalType || age == null || heightCm == null) {
+            setRecalcError("Попълни пол, възраст, ръст, активност и цел преди преизчисляване.");
+            return;
+        }
+        if (currentWeight == null) {
+            setRecalcError("Няма текущо тегло от прогреса. Добави запис в Тегло и опитай отново.");
+            return;
+        }
+        if (age < 10 || age > 100 || heightCm < 100 || heightCm > 250 || currentWeight < 30 || currentWeight > 300) {
+            setRecalcError("Данните са извън валидните граници за изчисление.");
+            return;
+        }
+
+        const hasManualValues = !!(form.caloriesTarget || form.proteinTarget || form.carbsTarget || form.fatTarget);
+        if (manualTargets && hasManualValues) {
+            const shouldOverride = window.confirm("Ще презапишем ръчно въведените таргети. Продължаваме ли?");
+            if (!shouldOverride) return;
+        }
+
+        const bmr = calculateBMR(form.gender as Sex, age, heightCm, currentWeight);
+        const tdee = calculateTDEE(bmr, form.activityLevel);
+        const calories = calculateCaloriesForGoal(tdee, mapGoalToCalculator(form.goalType)).calories;
+        const macros = calculateMacros(calories, currentWeight, mapGoalToCalculator(form.goalType));
+
+        setForm((prev) => ({
+            ...prev,
+            caloriesTarget: String(Math.round(calories)),
+            proteinTarget: String(Math.round(macros.protein)),
+            carbsTarget: String(Math.round(macros.carbs)),
+            fatTarget: String(Math.round(macros.fat)),
+        }));
+        setManualTargets(false);
+    };
+
+    const onSaveProfile = async () => {
+        const errors = validate();
+        setFieldErrors(errors);
+        if (Object.keys(errors).length > 0) return;
+
+        const updated = await save({
+            firstName: form.firstName.trim(),
+            lastName: form.lastName.trim(),
+            gender: (form.gender || null) as ProfileGender | null,
+            age: toNullableNumber(form.age),
+            heightCm: toNullableNumber(form.heightCm),
+            goalWeight: toNullableNumber(form.goalWeight),
+            activityLevel: (form.activityLevel || null) as ProfileActivityLevel | null,
+            goalType: (form.goalType || null) as ProfileGoalType | null,
+            caloriesTarget: toNullableNumber(form.caloriesTarget),
+            proteinTarget: toNullableNumber(form.proteinTarget),
+            carbsTarget: toNullableNumber(form.carbsTarget),
+            fatTarget: toNullableNumber(form.fatTarget),
+        });
+
+        if (updated) {
+            await refreshUser();
+        }
+    };
 
     return (
         <>
@@ -100,93 +310,101 @@ function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
             <div className="pf-page">
                 <DashboardSidebar theme={theme} onToggleTheme={onToggleTheme} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
                 <div className="pf-main">
-                    <ProfileHeader onToggleSidebar={() => setIsSidebarOpen((open) => !open)} onEditProfile={() => setIsEditing((value) => !value)} />
+                    <ProfileHeader
+                        onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
+                        onAction={onSaveProfile}
+                        actionLabel={isSaving ? "Запазване..." : "Запази"}
+                        actionDisabled={isSaving || isLoading}
+                        initials={initials}
+                        avatarDataUrl={profile?.avatarDataUrl ?? user?.avatarDataUrl}
+                    />
                     <div className="pf-content">
+                        {error && (
+                            <div className="pf-error-box">
+                                <span className="body-sm" style={{ color: "var(--c-error,#FF3D57)" }}>Грешка при зареждане: {error}</span>
+                                <div style={{ marginTop: "var(--sp-2)" }}>
+                                    <button type="button" className="btn-ghost btn-sm" onClick={() => void refresh()}>Опитай отново</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {saveError && (
+                            <div className="pf-error-box">
+                                <span className="body-sm" style={{ color: "var(--c-error,#FF3D57)" }}>Грешка при запазване: {saveError}</span>
+                            </div>
+                        )}
+
+                        {saveSuccess && (
+                            <div className="pf-success-box">
+                                <span className="body-sm" style={{ color: "#00E676" }}>{saveSuccess}</span>
+                            </div>
+                        )}
+
                         <div className="pf-top-grid">
-                            <ProductStatCard label="План" value={user.plan} sub={`активен от ${user.joined}`} accent="current" accentColor="var(--c-acid,#C8FF00)" />
-                            <ProductStatCard label="Текуща цел" value={user.goal} sub={`${user.calories} kcal · ${user.protein}g protein`} accent={user.activity} accentColor="var(--c-electric,#0066FF)" />
-                            <ProductStatCard label="Streak" value={`${user.streak} дни`} sub="поредни check-in и логове" accent="steady" accentColor="var(--c-acid,#C8FF00)" />
-                            <ProductStatCard label="Achievements" value={String(user.badges)} sub={`${user.checkins} check-ins общо`} accent="earned" accentColor="rgba(255,255,255,0.45)" />
+                            <ProductStatCard label="Профил" value={form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : "Непълен"} sub={summaryText} accent="лични данни" accentColor="var(--c-acid,#C8FF00)" />
+                            <ProductStatCard label="Текущо тегло" value={currentWeight != null ? `${currentWeight.toFixed(1)} кг` : "Няма данни"} sub="източник: последен запис от Прогрес" accent="/api/progress" accentColor="var(--c-electric,#0066FF)" />
+                            <ProductStatCard label="Калориен таргет" value={form.caloriesTarget ? `${form.caloriesTarget} kcal` : "Няма"} sub={form.goalType ? GOAL_OPTIONS.find((g) => g.value === form.goalType)?.label ?? "" : "Задай цел"} accent="персонален" accentColor="var(--c-electric,#0066FF)" />
+                            <ProductStatCard label="Макроси" value={macroSummary} sub="протеин / въглехидрати / мазнини" accent="дневни таргети" accentColor="rgba(255,255,255,0.45)" />
                         </div>
 
                         <div className="pf-main-grid">
                             <div className="card pf-card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
                                 <div className="pf-profile-hero">
-                                    <div className="pf-hero-avatar">МИ</div>
+                                    <div className="pf-hero-avatar" style={{ overflow: "hidden" }}>
+                                        {profile?.avatarDataUrl
+                                            ? <img src={profile.avatarDataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                            : initials}
+                                    </div>
                                     <div style={{ minWidth: 0 }}>
                                         <div className="label text-gray">FitLife ID</div>
-                                        <div style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 900, color: "var(--color-cream)", lineHeight: 1.05, marginTop: 6 }}>{user.name}</div>
-                                        <div className="body-sm text-gray" style={{ marginTop: 8 }}>{user.email} · {user.phone}</div>
+                                        <div style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 900, color: "var(--color-cream)", lineHeight: 1.05, marginTop: 6 }}>{form.firstName || form.lastName ? `${form.firstName} ${form.lastName}` : "Профил"}</div>
+                                        <div className="body-sm text-gray" style={{ marginTop: 8 }}>{form.email || "-"}</div>
                                         <div className="pf-chip-row" style={{ marginTop: "var(--sp-3)" }}>
-                                            <span className="pf-chip">{user.city}</span>
-                                            <span className="pf-chip">{user.age} г.</span>
-                                            <span className="pf-chip">{user.privacy}</span>
+                                            <span className="pf-chip">{form.activityLevel ? ACTIVITY_OPTIONS.find((a) => a.value === form.activityLevel)?.label : "Без активност"}</span>
+                                            <span className="pf-chip">{form.goalType ? GOAL_OPTIONS.find((g) => g.value === form.goalType)?.label : "Без цел"}</span>
+                                            <span className="pf-chip">{profile?.updatedAt ? `обновен: ${new Date(profile.updatedAt).toLocaleDateString("bg-BG")}` : "нов профил"}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {isEditing && (
-                                    <div className="pf-info-grid">
-                                        {[
-                                            ["Име", "name", user.name],
-                                            ["Имейл", "email", user.email],
-                                            ["Телефон", "phone", user.phone],
-                                            ["Град", "city", user.city],
-                                            ["Цел", "goal", user.goal],
-                                            ["Активност", "activity", user.activity],
-                                        ].map(([label, key, value]) => (
-                                            <label key={key} className="pf-info-box" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                                <span className="label text-gray">{label}</span>
-                                                <input
-                                                    value={String(value)}
-                                                    onChange={(e) => setUser((prev) => ({ ...prev, [key]: e.target.value }))}
-                                                    style={{ width: "100%", padding: "10px 12px", borderRadius: "var(--r-md)", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--color-cream)", outline: "none" }}
-                                                />
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-
-                                <div>
-                                    <div className="label text-gray">Основни данни</div>
-                                    <div className="pf-info-grid" style={{ marginTop: "var(--sp-3)" }}>
-                                        {[
-                                            ["Ръст", `${user.height} см`],
-                                            ["Тегло", `${user.weight.toFixed(1)} кг`],
-                                            ["Body Fat", `${user.bodyFat}%`],
-                                            ["BMI", bmi.toFixed(1)],
-                                            ["Goal Weight", `${user.goalWeight} кг`],
-                                            ["Delta", `${goalDelta.toFixed(1)} кг`],
-                                        ].map(([label, value]) => (
-                                            <div key={label} className="pf-info-box">
-                                                <div className="label text-gray">{label}</div>
-                                                <div style={{ color: "var(--color-cream)", fontWeight: 800, fontSize: "1.05rem", marginTop: 6 }}>{value}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                <div className="pf-note-box body-sm text-gray">Профилът е личен за всеки потребител. Текущото тегло се взима от последния запис в секция Тегло/Прогрес.</div>
                             </div>
 
                             <div className="card pf-card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
                                 <div>
-                                    <div className="label text-gray">Режим и предпочитания</div>
-                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Персонализация за приложението</div>
+                                    <div className="label text-gray">A. Основна информация</div>
+                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Име, имейл и лични данни</div>
                                 </div>
 
-                                <div className="pf-list">
-                                    {[
-                                        ["Активност", user.activity],
-                                        ["Тренировъчен шаблон", user.training],
-                                        ["Калориен таргет", `${user.calories} kcal / ден`],
-                                        ["Протеин", `${user.protein} g / ден`],
-                                        ["Вода", `${user.water.toFixed(1)} L / ден`],
-                                        ["Поверителност", user.privacy],
-                                    ].map(([label, value]) => (
-                                        <div key={label} className="pf-info-box">
-                                            <div className="label text-gray">{label}</div>
-                                            <div className="body-sm" style={{ color: "var(--color-cream)", fontWeight: 700, marginTop: 6 }}>{value}</div>
-                                        </div>
-                                    ))}
+                                <div className="pf-form-grid">
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Име</span>
+                                        <input className="pf-input" value={form.firstName} onChange={(e) => setField("firstName", e.target.value)} />
+                                        {fieldErrors.firstName && <span className="pf-field-error">{fieldErrors.firstName}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Фамилия</span>
+                                        <input className="pf-input" value={form.lastName} onChange={(e) => setField("lastName", e.target.value)} />
+                                        {fieldErrors.lastName && <span className="pf-field-error">{fieldErrors.lastName}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Имейл</span>
+                                        <input className="pf-input" value={form.email} readOnly disabled />
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Пол</span>
+                                        <select className="pf-select" value={form.gender} onChange={(e) => setField("gender", e.target.value as FormState["gender"])}>
+                                            <option value="">Избери</option>
+                                            <option value="male">Мъж</option>
+                                            <option value="female">Жена</option>
+                                        </select>
+                                        {fieldErrors.gender && <span className="pf-field-error">{fieldErrors.gender}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Възраст</span>
+                                        <input className="pf-input" type="number" inputMode="numeric" value={form.age} onChange={(e) => setField("age", e.target.value)} />
+                                        {fieldErrors.age && <span className="pf-field-error">{fieldErrors.age}</span>}
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -194,50 +412,96 @@ function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
                         <div className="pf-bottom-grid">
                             <div className="card pf-card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
                                 <div>
-                                    <div className="label text-gray">Account & Security</div>
-                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Най-важното за акаунта</div>
+                                    <div className="label text-gray">B, C и D. Тяло, активност и таргети</div>
+                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Метрики и хранителни настройки</div>
                                 </div>
 
-                                <div className="pf-list">
-                                    {[
-                                        ["Имейл потвърден", "Да, активен login email"],
-                                        ["Парола", "Последна смяна преди 43 дни"],
-                                        ["2FA", "Неактивирано"],
-                                        ["Свързани устройства", "iPhone 15 · Chrome on Windows"],
-                                        ["Експорт на данни", "Наличен при поискване"],
-                                        ["Delete account", "Ръчно потвърждение и пълно изтриване"],
-                                    ].map(([label, value]) => (
-                                        <div key={label} className="pf-info-box">
-                                            <div className="label text-gray">{label}</div>
-                                            <div className="body-sm" style={{ color: "var(--color-cream)", marginTop: 6 }}>{value}</div>
-                                        </div>
-                                    ))}
+                                <div className="pf-form-grid">
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Ръст (см)</span>
+                                        <input className="pf-input" type="number" inputMode="decimal" value={form.heightCm} onChange={(e) => setField("heightCm", e.target.value)} />
+                                        {fieldErrors.heightCm && <span className="pf-field-error">{fieldErrors.heightCm}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Текущо тегло (кг)</span>
+                                        <input className="pf-input" value={currentWeight != null ? currentWeight.toFixed(1) : ""} placeholder="Няма данни" readOnly disabled />
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Целево тегло (кг)</span>
+                                        <input className="pf-input" type="number" inputMode="decimal" value={form.goalWeight} onChange={(e) => setField("goalWeight", e.target.value)} />
+                                        {fieldErrors.goalWeight && <span className="pf-field-error">{fieldErrors.goalWeight}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Ниво на активност</span>
+                                        <select className="pf-select" value={form.activityLevel} onChange={(e) => setField("activityLevel", e.target.value as FormState["activityLevel"])}>
+                                            <option value="">Избери</option>
+                                            {ACTIVITY_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                            ))}
+                                        </select>
+                                        {fieldErrors.activityLevel && <span className="pf-field-error">{fieldErrors.activityLevel}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Цел</span>
+                                        <select className="pf-select" value={form.goalType} onChange={(e) => setField("goalType", e.target.value as FormState["goalType"])}>
+                                            <option value="">Избери</option>
+                                            {GOAL_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                            ))}
+                                        </select>
+                                        {fieldErrors.goalType && <span className="pf-field-error">{fieldErrors.goalType}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Калориен таргет (kcal)</span>
+                                        <input className="pf-input" type="number" inputMode="numeric" value={form.caloriesTarget} onChange={(e) => setField("caloriesTarget", e.target.value)} />
+                                        {fieldErrors.caloriesTarget && <span className="pf-field-error">{fieldErrors.caloriesTarget}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Протеин (г)</span>
+                                        <input className="pf-input" type="number" inputMode="decimal" value={form.proteinTarget} onChange={(e) => setField("proteinTarget", e.target.value)} />
+                                        {fieldErrors.proteinTarget && <span className="pf-field-error">{fieldErrors.proteinTarget}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Въглехидрати (г)</span>
+                                        <input className="pf-input" type="number" inputMode="decimal" value={form.carbsTarget} onChange={(e) => setField("carbsTarget", e.target.value)} />
+                                        {fieldErrors.carbsTarget && <span className="pf-field-error">{fieldErrors.carbsTarget}</span>}
+                                    </label>
+                                    <label className="pf-field">
+                                        <span className="label text-gray">Мазнини (г)</span>
+                                        <input className="pf-input" type="number" inputMode="decimal" value={form.fatTarget} onChange={(e) => setField("fatTarget", e.target.value)} />
+                                        {fieldErrors.fatTarget && <span className="pf-field-error">{fieldErrors.fatTarget}</span>}
+                                    </label>
                                 </div>
+
+                                {recalcError && <div className="pf-error-box"><span className="body-sm" style={{ color: "var(--c-error,#FF3D57)" }}>{recalcError}</span></div>}
+
+                                <div className="pf-inline-actions">
+                                    <button type="button" className="btn-ghost btn-sm" onClick={onRecalculateTargets}>Преизчисли таргетите</button>
+                                    <button type="button" className="btn-primary btn-sm" disabled={isSaving || isLoading} onClick={onSaveProfile}>{isSaving ? "Запазване..." : "Запази профила"}</button>
+                                </div>
+
+                                <div className="pf-note-box body-sm text-gray">При преизчисляване таргетите не се презаписват автоматично без потвърждение, ако вече са редактирани ръчно.</div>
                             </div>
 
                             <div className="card pf-card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
                                 <div>
-                                    <div className="label text-gray">Membership</div>
-                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>План, perks и следващи стъпки</div>
+                                    <div className="label text-gray">Профилни действия</div>
+                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Сигурност и допълнения</div>
                                 </div>
-
-                                <div style={{ borderRadius: "var(--r-xl)", padding: "var(--sp-4)", background: "linear-gradient(135deg,rgba(0,102,255,0.16),rgba(200,255,0,0.12))", border: "1px solid rgba(0,102,255,0.18)" }}>
-                                    <div className="label" style={{ color: "var(--c-electric,#0066FF)" }}>Current plan</div>
-                                    <div style={{ fontFamily: "var(--font-display)", fontSize: "1.55rem", fontWeight: 900, color: "var(--color-cream)", marginTop: 6 }}>{user.plan}</div>
-                                    <div className="body-sm text-gray" style={{ marginTop: 8 }}>Достъп до tracking, продукти, калкулатори и базови challenge-и.</div>
-                                </div>
-
                                 <div className="pf-list">
-                                    {[
-                                        ["Отключени модули", "Calories, Weight, Recipes, Products, Shop"],
-                                        ["Следващ upgrade", "Advanced analytics, team challenges, premium plans"],
-                                        ["Support tier", "Standard help center + email"],
-                                    ].map(([label, value]) => (
-                                        <div key={label} className="pf-info-box">
-                                            <div className="label text-gray">{label}</div>
-                                            <div className="body-sm" style={{ color: "var(--color-cream)", marginTop: 6 }}>{value}</div>
-                                        </div>
-                                    ))}
+                                    <AvatarUploadBox profile={profile} onSaved={async (dataUrl) => {
+                                        await profileApi.update({ avatarDataUrl: dataUrl });
+                                        await refresh();
+                                        await refreshUser();
+                                    }} />
+                                    <div className="pf-info-box">
+                                        <div className="label text-gray">Парола</div>
+                                        <div className="body-sm" style={{ color: "var(--color-cream)", marginTop: 6 }}>Смяна на парола: използвай текущия auth flow за reset.</div>
+                                    </div>
+                                    <div className="pf-info-box">
+                                        <div className="label text-gray">Източник на тегло</div>
+                                        <div className="body-sm" style={{ color: "var(--color-cream)", marginTop: 6 }}>Историята на теглото остава в Прогрес (/api/progress) и не се дублира в профила.</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -245,6 +509,118 @@ function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
                 </div>
             </div>
         </>
+    );
+}
+
+// ─── AvatarUploadBox ──────────────────────────────────────────────────────────
+
+function AvatarUploadBox({
+    profile,
+    onSaved,
+}: {
+    profile: ApiProfile | null;
+    onSaved: (dataUrl: string | null) => Promise<void>;
+}): JSX.Element {
+    const fileRef = useRef<HTMLInputElement>(null);
+    const [preview, setPreview] = useState<string | null>(profile?.avatarDataUrl ?? null);
+    const [saving, setSaving] = useState(false);
+    const [err, setErr] = useState("");
+    const [ok, setOk] = useState(false);
+
+    useEffect(() => {
+        setPreview(profile?.avatarDataUrl ?? null);
+    }, [profile?.avatarDataUrl]);
+
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setErr("");
+        setOk(false);
+        if (!file.type.startsWith("image/")) {
+            setErr("Само изображения (jpg, png, webp, gif).");
+            return;
+        }
+        if (file.size > 500_000) {
+            setErr("Файлът е твърде голям — максимум 500 KB.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const result = ev.target?.result as string | null;
+            if (result) setPreview(result);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleSave = async () => {
+        if (!preview || preview === (profile?.avatarDataUrl ?? null)) return;
+        setSaving(true);
+        setErr("");
+        try {
+            await onSaved(preview);
+            setOk(true);
+            setTimeout(() => setOk(false), 3000);
+        } catch (e) {
+            setErr(e instanceof Error ? e.message : "Грешка при запазване.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRemove = async () => {
+        setPreview(null);
+        setSaving(true);
+        setErr("");
+        try {
+            await onSaved(null);
+            setOk(true);
+            setTimeout(() => setOk(false), 3000);
+        } catch (e) {
+            setErr(e instanceof Error ? e.message : "Грешка при премахване.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="pf-info-box" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+            <div className="label text-gray">Аватар</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-4)" }}>
+                <div style={{
+                    width: 72, height: 72, borderRadius: 16, overflow: "hidden", flexShrink: 0,
+                    background: "linear-gradient(135deg,rgba(0,102,255,0.22),rgba(200,255,0,0.18))",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                    {preview
+                        ? <img src={preview} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        : <span style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", fontWeight: 900, color: "var(--color-cream)" }}>
+                            {profile ? getInitials({ firstName: profile.firstName, lastName: profile.lastName, id: "", email: "", role: "user" }) : "?"}
+                          </span>
+                    }
+                </div>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
+                    <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+                    <button type="button" className="btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
+                        📷 Избери снимка
+                    </button>
+                    {preview && preview !== (profile?.avatarDataUrl ?? null) && (
+                        <button type="button" className="btn-primary btn-sm" disabled={saving} onClick={handleSave}>
+                            {saving ? "Запазване…" : "Запази аватара"}
+                        </button>
+                    )}
+                    {preview && preview === (profile?.avatarDataUrl ?? null) && (
+                        <button type="button" className="btn-ghost btn-sm" disabled={saving} onClick={handleRemove}
+                            style={{ color: "var(--c-error,#FF3D57)", borderColor: "rgba(255,61,87,0.25)" }}>
+                            Премахни аватара
+                        </button>
+                    )}
+                </div>
+            </div>
+            {err && <div className="pf-error-box"><span className="body-sm" style={{ color: "var(--c-error,#FF3D57)" }}>{err}</span></div>}
+            {ok  && <div className="pf-success-box"><span className="body-sm" style={{ color: "#00E676" }}>✓ Аватарът е запазен.</span></div>}
+            <div className="label text-gray">Макс. 500 KB · jpg, png, webp, gif</div>
+        </div>
     );
 }
 

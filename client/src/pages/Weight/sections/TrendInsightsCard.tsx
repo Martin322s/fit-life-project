@@ -1,52 +1,23 @@
 import type { JSX } from "react";
-import { WEIGHT_DATA } from "./weightData";
 
-export default function TrendInsightsCard(): JSX.Element {
-    const { weeklyAvgLoss, totalLost, remaining, bestWeek, consistencyPct, daysAheadOfSchedule } = WEIGHT_DATA.insights;
+type Props = {
+    totalEntries: number;
+    minWeight: number | null;
+    maxWeight: number | null;
+    averageWeight: number | null;
+    remainingToGoal: number | null;
+    totalChangeFromStart: number | null;
+    goalProgressPct: number | null;
+};
 
+export default function TrendInsightsCard({ totalEntries, minWeight, maxWeight, averageWeight, remainingToGoal, totalChangeFromStart, goalProgressPct }: Props): JSX.Element {
     const metrics = [
-        {
-            label: "Средна загуба",
-            value: `${weeklyAvgLoss} кг`,
-            unit: "на седмица",
-            color: "#00E676",
-            icon: "📉",
-        },
-        {
-            label: "Общо свалени",
-            value: `${totalLost} кг`,
-            unit: `от ${WEIGHT_DATA.stats.startDate}`,
-            color: "var(--c-electric,#0066FF)",
-            icon: "⚖️",
-        },
-        {
-            label: "Остават",
-            value: `${remaining} кг`,
-            unit: "до целта",
-            color: "var(--c-acid,#C8FF00)",
-            icon: "🎯",
-        },
-        {
-            label: "Най-добра седмица",
-            value: `${bestWeek} кг`,
-            unit: "за 7 дни",
-            color: "#FFB300",
-            icon: "🏆",
-        },
-        {
-            label: "Консистентност",
-            value: `${consistencyPct}%`,
-            unit: "дни с логване",
-            color: "#74B9FF",
-            icon: "📅",
-        },
-        {
-            label: "Напред по план",
-            value: `${daysAheadOfSchedule} дни`,
-            unit: "по-рано",
-            color: "#00E676",
-            icon: "🚀",
-        },
+        { label: "Общо записи", value: String(totalEntries), unit: "измервания", color: "var(--c-electric,#0066FF)" },
+        { label: "Минимум", value: minWeight != null ? `${minWeight} кг` : "—", unit: "най-ниско тегло", color: "#00E676" },
+        { label: "Максимум", value: maxWeight != null ? `${maxWeight} кг` : "—", unit: "най-високо тегло", color: "#FFB300" },
+        { label: "Средно", value: averageWeight != null ? `${averageWeight} кг` : "—", unit: "за всички записи", color: "#74B9FF" },
+        { label: "До целта", value: remainingToGoal != null ? `${remainingToGoal} кг` : "—", unit: "от профила", color: "var(--c-acid,#C8FF00)" },
+        { label: "От началото", value: totalChangeFromStart != null ? `${totalChangeFromStart > 0 ? "+" : ""}${totalChangeFromStart} кг` : "—", unit: goalProgressPct != null ? `${goalProgressPct}% към целта` : "нужна е цел", color: totalChangeFromStart != null && totalChangeFromStart <= 0 ? "#00E676" : "var(--c-error,#FF3D57)" },
     ];
 
     return (
@@ -58,7 +29,6 @@ export default function TrendInsightsCard(): JSX.Element {
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
                 {metrics.map((m) => (
                     <div key={m.label} style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", padding: "var(--sp-3) var(--sp-4)", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,0.025)", border: "1px solid var(--c-border,rgba(255,255,255,0.06))" }}>
-                        <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>{m.icon}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <div className="label text-gray">{m.label}</div>
                             <div className="body-sm text-gray" style={{ marginTop: 1 }}>{m.unit}</div>

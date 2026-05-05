@@ -16,7 +16,8 @@
 .pd-bottom-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--sp-4); align-items: start; }
 .pd-card { padding: var(--sp-5); box-sizing: border-box; min-width: 0; }
 .pd-pill { padding: 5px 10px; border-radius: 999px; font-size: 0.72rem; letter-spacing: 0.03em; font-weight: 700; }
-.pd-catalog-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: var(--sp-3); min-width: 0; }
+.pd-catalog-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--sp-3); min-width: 0; }
+.pd-filter-grid { display: grid; grid-template-columns: minmax(180px,1fr) 210px repeat(3, minmax(120px, auto)); gap: var(--sp-3); align-items: center; }
 .pd-product-card { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); border-radius: var(--r-lg); text-align: left; cursor: pointer; background: rgba(255,255,255,0.02); border: 1px solid var(--c-border,rgba(255,255,255,0.06)); transition: all 0.15s; width: 100%; box-sizing: border-box; min-width: 0; overflow: hidden; }
 .pd-product-card--selected { background: rgba(0,102,255,0.07) !important; border-color: var(--c-electric,#0066FF) !important; }
 .pd-product-card-icon-row { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -25,6 +26,11 @@
 .pd-product-card-stats { display: flex; justify-content: space-between; align-items: center; min-width: 0; gap: var(--sp-2); }
 .pd-macro-bar-mobile { display: none !important; }
 .pd-macro-bar-desktop { display: flex; }
+.pd-content > *,
+.pd-top-grid,
+.pd-main-grid,
+.pd-bottom-grid,
+.pd-catalog-grid { min-width: 0; width: 100%; }
 
 @media (max-width: 1400px) {
   .pd-catalog-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
@@ -62,7 +68,8 @@
   .pd-scan-btn span { display: none; }
   .pd-top-grid { grid-template-columns: 1fr 1fr; }
   .pd-catalog-grid { grid-template-columns: 1fr; gap: var(--sp-2); }
-  .pd-product-card { flex-direction: row; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); width: 100%; max-width: 100%; }
+  .pd-filter-grid { grid-template-columns: 1fr; }
+  .pd-product-card { align-items: stretch; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); width: 100%; max-width: 100%; }
   .pd-product-card-icon-row { flex-direction: column; align-items: center; gap: 3px; width: 40px; flex-shrink: 0; }
   .pd-product-card-icon { font-size: 1.6rem; }
   .pd-product-card-info { flex: 1; min-width: 0; }

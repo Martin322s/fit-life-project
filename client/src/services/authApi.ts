@@ -1,6 +1,6 @@
 // All requests go to /api/* — Vite proxies them to the Next.js server in dev.
-// In production set VITE_API_URL to the deployed server origin.
-const BASE = import.meta.env.VITE_API_URL ?? "";
+// In production set VITE_API_BASE_URL to the deployed server origin.
+const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export type AuthUser = {
   id: string;
@@ -8,6 +8,23 @@ export type AuthUser = {
   firstName: string;
   lastName: string;
   role: "user" | "admin";
+  avatarDataUrl?: string | null;
+  gender?: "male" | "female" | null;
+  age?: number | null;
+  heightCm?: number | null;
+  goalWeight?: number | null;
+  activityLevel?: "sedentary" | "light" | "moderate" | "very" | null;
+  goalType?: "lose_weight" | "maintain" | "gain_weight" | null;
+  caloriesTarget?: number | null;
+  proteinTarget?: number | null;
+  carbsTarget?: number | null;
+  fatTarget?: number | null;
+  height?: number | null;
+  heightUnit?: "cm" | "ft" | null;
+  weight?: number | null;
+  weightUnit?: "kg" | "lb" | null;
+  goal?: "lose" | "maintain" | "gain" | null;
+  activity?: "sedentary" | "light" | "moderate" | "very" | null;
 };
 
 type AuthResponse = { user: AuthUser; token: string };

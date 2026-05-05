@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 
-type WeightStatCardProps = {
+type Props = {
     label: string;
     value: string;
     sub: string;
@@ -9,7 +9,7 @@ type WeightStatCardProps = {
     trend?: "up" | "down" | "neutral";
 };
 
-export default function WeightStatCard({ label, value, sub, accent, accentColor, trend }: WeightStatCardProps): JSX.Element {
+export default function WeightStatCard({ label, value, sub, accent, accentColor, trend }: Props): JSX.Element {
     const trendIcon = trend === "down" ? "↓" : trend === "up" ? "↑" : null;
     const trendColor = trend === "down" ? "#00E676" : trend === "up" ? "var(--c-error,#FF3D57)" : undefined;
     return (

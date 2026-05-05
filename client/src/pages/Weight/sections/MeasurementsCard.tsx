@@ -1,53 +1,44 @@
 import type { JSX } from "react";
-import { WEIGHT_DATA } from "./weightData";
+import type { ApiProgressEntry } from "../../../services/dashboardApi";
+import { formatDate } from "../../../lib/progressUtils";
 
-export default function MeasurementsCard(): JSX.Element {
+type Props = {
+    latest: ApiProgressEntry | null;
+    firstWithWaist: ApiProgressEntry | null;
+};
+
+export default function MeasurementsCard({ latest, firstWithWaist }: Props): JSX.Element {
+    const waistChange = latest?.waistCm != null && firstWithWaist?.waistCm != null
+        ? +(latest.waistCm - firstWithWaist.waistCm).toFixed(1)
+        : null;
+
     return (
         <div className="card wt-card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--sp-3)" }}>
                 <div>
                     <div className="label text-gray">Телесни мерки</div>
-                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Промяна от началото</div>
+                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Талия от записите</div>
                 </div>
                 <span className="wt-pill" style={{ background: "rgba(0,102,255,0.1)", color: "var(--c-electric,#0066FF)" }}>см</span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
-                {WEIGHT_DATA.measurements.map((m) => {
-                    const totalRange = m.start - m.goal;
-                    const progress = m.start - m.current;
-                    const isPositive = m.goal > m.start;
-                    const pct = isPositive
-                        ? Math.min(((m.current - m.start) / (m.goal - m.start)) * 100, 100)
-                        : Math.min((progress / totalRange) * 100, 100);
-                    const change = +(m.current - m.start).toFixed(1);
-                    const changeColor = isPositive
-                        ? (change >= 0 ? "#00E676" : "var(--c-error,#FF3D57)")
-                        : (change <= 0 ? "#00E676" : "var(--c-error,#FF3D57)");
-
-                    return (
-                        <div key={m.label}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-                                    <span>{m.icon}</span>
-                                    <span className="body-sm" style={{ color: "var(--color-cream)", fontWeight: 600 }}>{m.label}</span>
-                                </div>
-                                <div style={{ display: "flex", alignItems: "baseline", gap: "var(--sp-2)" }}>
-                                    <span style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, color: "var(--color-cream)" }}>{m.current}</span>
-                                    <span className="label text-gray">/ {m.goal} {m.unit}</span>
-                                    <span className="label" style={{ color: changeColor }}>{change >= 0 ? "+" : ""}{change}</span>
-                                </div>
-                            </div>
-                            <div style={{ height: 6, borderRadius: "var(--r-full)", background: "rgba(255,255,255,0.06)" }}>
-                                <div style={{ width: `${Math.max(pct, 0)}%`, height: "100%", borderRadius: "var(--r-full)", background: "linear-gradient(90deg,var(--c-electric,#0066FF),#00E676)", transition: "width 0.4s" }} />
-                            </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                                <span className="label text-gray">Начало: {m.start} {m.unit}</span>
-                                <span className="label" style={{ color: "var(--c-acid,#C8FF00)" }}>{Math.round(pct)}%</span>
-                            </div>
-                        </div>
-                    );
-                })}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
+                <div style={{ padding: "var(--sp-3)", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,0.025)", border: "1px solid var(--c-border,rgba(255,255,255,0.06))" }}>
+                    <div className="label text-gray">Последна талия</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", fontWeight: 800, color: "var(--color-cream)", marginTop: 4 }}>
+                        {latest?.waistCm != null ? `${latest.waistCm} см` : "—"}
+                    </div>
+                    <div className="body-sm text-gray" style={{ marginTop: 4 }}>{latest ? formatDate(latest.createdAt) : "няма запис"}</div>
+                </div>
+                <div style={{ padding: "var(--sp-3)", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,0.025)", border: "1px solid var(--c-border,rgba(255,255,255,0.06))" }}>
+                    <div className="label text-gray">Промяна</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", fontWeight: 800, color: waistChange == null ? "rgba(255,255,255,0.45)" : waistChange <= 0 ? "#00E676" : "var(--c-error,#FF3D57)", marginTop: 4 }}>
+                        {waistChange != null ? `${waistChange > 0 ? "+" : ""}${waistChange} см` : "—"}
+                    </div>
+                    <div className="body-sm text-gray" style={{ marginTop: 4 }}>
+                        {firstWithWaist ? `спрямо ${formatDate(firstWithWaist.createdAt)}` : "добави талия за сравнение"}
+                    </div>
+                </div>
             </div>
         </div>
     );

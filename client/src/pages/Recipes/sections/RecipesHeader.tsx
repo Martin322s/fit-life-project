@@ -1,9 +1,14 @@
 import type { JSX } from "react";
-import { RECIPES_DATA } from "./recipesData";
 
-type RecipesHeaderProps = { onToggleSidebar: () => void; onAddRecipe: () => void };
+type Props = {
+    initials: string;
+    total: number;
+    isAdmin: boolean;
+    onToggleSidebar: () => void;
+    onAddRecipe: () => void;
+};
 
-export default function RecipesHeader({ onToggleSidebar, onAddRecipe }: RecipesHeaderProps): JSX.Element {
+export default function RecipesHeader({ initials, total, isAdmin, onToggleSidebar, onAddRecipe }: Props): JSX.Element {
     return (
         <div className="rc-header">
             <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", minWidth: 0, flex: 1 }}>
@@ -14,16 +19,12 @@ export default function RecipesHeader({ onToggleSidebar, onAddRecipe }: RecipesH
                 </button>
                 <div style={{ minWidth: 0, flex: 1 }}>
                     <h1 className="rc-title">Рецепти и хранене</h1>
-                    <div className="rc-header-sub body-sm text-gray">{RECIPES_DATA.stats.savedCount} запазени рецепти · план за цялата седмица</div>
+                    <div className="rc-header-sub body-sm text-gray">{total} рецепти в каталога · видими за всички потребители</div>
                 </div>
             </div>
             <div className="rc-header-right">
-                <div className="rc-streak">
-                    <span>🔥</span>
-                    <span className="body-sm" style={{ color: "var(--c-acid,#C8FF00)", fontWeight: 600 }}>{RECIPES_DATA.user.streak} дни серия</span>
-                </div>
-                <button type="button" className="btn-primary btn-sm" onClick={onAddRecipe}>+ Нова рецепта</button>
-                <div className="rc-avatar">{RECIPES_DATA.user.initials}</div>
+                {isAdmin && <button type="button" className="btn-primary btn-sm" onClick={onAddRecipe}>+ Нова рецепта</button>}
+                <div className="rc-avatar">{initials}</div>
             </div>
         </div>
     );

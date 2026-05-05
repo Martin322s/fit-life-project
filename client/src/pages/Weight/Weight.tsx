@@ -1,7 +1,10 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import DashboardSidebar from "../../layout/DashboardLayout/DashboardSidebar";
-import { WEIGHT_DATA } from "./sections/weightData";
+import { getInitials, useAuth } from "../../context/AuthContext";
+import { useWeightData } from "../../hooks/useWeightData";
+import { dashboardApi } from "../../services/dashboardApi";
+import { formatDate } from "../../lib/progressUtils";
 import WeightHeader from "./sections/WeightHeader";
 import WeightStatCard from "./sections/WeightStatCard";
 import WeightChartCard from "./sections/WeightChartCard";
@@ -17,15 +20,46 @@ import "./Weight.css";
 
 type WeightProps = { theme: "dark" | "light"; onToggleTheme: () => void };
 
+function formatKg(value: number | null): string {
+    return value != null ? `${value} кг` : "—";
+}
+
 function Weight({ theme, onToggleTheme }: WeightProps): JSX.Element {
-    const { current, goal, start, bmi } = WEIGHT_DATA.stats;
-    const { totalLost, remaining, weeklyAvgLoss } = WEIGHT_DATA.insights;
+    const { user } = useAuth();
+    const data = useWeightData();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
+    const latestDate = data.latest ? formatDate(data.latest.createdAt) : null;
+    const initials = user ? getInitials(user) : "FL";
+    const weightTrend = data.weightChange == null ? "neutral" : data.weightChange > 0 ? "up" : data.weightChange < 0 ? "down" : "neutral";
+    const weightChangeText =
+        data.weightChange == null
+            ? "Нужни са поне 2 записа"
+            : data.weightChange === 0
+                ? "Без промяна спрямо предишния запис"
+                : `${data.weightChange > 0 ? "+" : ""}${data.weightChange} кг спрямо предишния запис`;
+    const firstWithWaist = data.entriesOldest.find((entry) => entry.waistCm != null) ?? null;
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("Сигурен ли си, че искаш да изтриеш този запис?")) return;
+        try {
+            await dashboardApi.deleteProgress(id);
+            data.refresh();
+        } catch (err) {
+            console.error("Delete progress failed:", err);
+        }
+    };
+
     return (
         <>
-            {showModal && <LogWeightModal onClose={() => setShowModal(false)} />}
+            {showModal && (
+                <LogWeightModal
+                    currentWeight={data.currentWeight}
+                    onClose={() => setShowModal(false)}
+                    onSuccess={data.refresh}
+                />
+            )}
             {isSidebarOpen && (
                 <div
                     style={{ position: "fixed", inset: 0, zIndex: 299, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", cursor: "pointer" }}
@@ -36,60 +70,83 @@ function Weight({ theme, onToggleTheme }: WeightProps): JSX.Element {
                 <DashboardSidebar theme={theme} onToggleTheme={onToggleTheme} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
                 <div className="wt-main">
                     <WeightHeader
+                        initials={initials}
+                        streak={data.streak}
+                        lastLogged={latestDate}
                         onToggleSidebar={() => setIsSidebarOpen((o) => !o)}
                         onLogWeight={() => setShowModal(true)}
                     />
                     <div className="wt-content">
+                        {data.error && (
+                            <div style={{ padding: "var(--sp-3) var(--sp-4)", borderRadius: "var(--r-md)", background: "rgba(255,61,87,0.1)", border: "1px solid rgba(255,61,87,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--sp-3)" }}>
+                                <span className="body-sm" style={{ color: "var(--c-error,#FF3D57)" }}>Грешка при зареждане: {data.error}</span>
+                                <button type="button" className="btn-ghost btn-sm" onClick={data.refresh}>Опитай отново</button>
+                            </div>
+                        )}
 
-                        {/* Row 1 — 4 key stats */}
                         <div className="wt-top-grid">
                             <WeightStatCard
                                 label="Текущо тегло"
-                                value={`${current} кг`}
-                                sub={`Последно: ${WEIGHT_DATA.stats.lastLogged}`}
-                                trend="down"
+                                value={data.isLoading ? "—" : formatKg(data.currentWeight)}
+                                sub={data.latest ? `Последно: ${latestDate}` : "Няма записано тегло"}
+                                trend={weightTrend}
                             />
                             <WeightStatCard
-                                label="Свалени общо"
-                                value={`${totalLost} кг`}
-                                sub={`от начални ${start} кг`}
-                                accent={`${WEIGHT_DATA.insights.percentComplete}%`}
-                                accentColor="#00E676"
+                                label="Промяна"
+                                value={data.isLoading ? "—" : data.weightChange != null ? `${data.weightChange > 0 ? "+" : ""}${data.weightChange} кг` : "—"}
+                                sub={weightChangeText}
+                                accent={data.weightChange == null ? undefined : data.weightChange <= 0 ? "надолу" : "нагоре"}
+                                accentColor={data.weightChange != null && data.weightChange <= 0 ? "#00E676" : "var(--c-error,#FF3D57)"}
                             />
                             <WeightStatCard
-                                label="Остават до цел"
-                                value={`${remaining} кг`}
-                                sub={`Цел: ${goal} кг · ${WEIGHT_DATA.stats.goalDate}`}
+                                label="Общо записи"
+                                value={data.isLoading ? "—" : String(data.totalEntries)}
+                                sub={`Мин: ${formatKg(data.minWeight)} · Макс: ${formatKg(data.maxWeight)}`}
+                            />
+                            <WeightStatCard
+                                label="Средно тегло"
+                                value={data.isLoading ? "—" : formatKg(data.averageWeight)}
+                                sub={data.goalWeight != null ? `Цел: ${data.goalWeight} кг` : "Целево тегло липсва в профила"}
+                                accent={data.goalProgressPct != null ? `${data.goalProgressPct}%` : undefined}
                                 accentColor="var(--c-acid,#C8FF00)"
                             />
-                            <WeightStatCard
-                                label="ИТМ"
-                                value={`${bmi}`}
-                                sub="Наднормено тегло · при цел → Нормално"
-                                accent={`${weeklyAvgLoss} кг/сед.`}
-                                accentColor="var(--c-electric,#0066FF)"
+                        </div>
+
+                        <div className="wt-hero-grid">
+                            <WeightChartCard entries={data.entriesOldest} goalWeight={data.goalWeight} isLoading={data.isLoading} />
+                            <ProgressCard
+                                startWeight={data.startWeight}
+                                currentWeight={data.currentWeight}
+                                goalWeight={data.goalWeight}
+                                progressPct={data.goalProgressPct}
+                                totalChangeFromStart={data.totalChangeFromStart}
                             />
                         </div>
 
-                        {/* Row 2 — Main chart + Progress */}
-                        <div className="wt-hero-grid">
-                            <WeightChartCard />
-                            <ProgressCard />
-                        </div>
-
-                        {/* Row 3 — Insights / Measurements / Consistency */}
                         <div className="wt-three-grid">
-                            <TrendInsightsCard />
-                            <MeasurementsCard />
-                            <ConsistencyCard />
+                            <TrendInsightsCard
+                                totalEntries={data.totalEntries}
+                                minWeight={data.minWeight}
+                                maxWeight={data.maxWeight}
+                                averageWeight={data.averageWeight}
+                                remainingToGoal={data.remainingToGoal}
+                                totalChangeFromStart={data.totalChangeFromStart}
+                                goalProgressPct={data.goalProgressPct}
+                            />
+                            <MeasurementsCard latest={data.latest} firstWithWaist={firstWithWaist} />
+                            <ConsistencyCard loggedDays={data.loggedDaysLast35} streak={data.streak} />
                         </div>
 
-                        {/* Row 4 — BMI + History */}
                         <div className="wt-two-grid">
-                            <BmiCard />
-                            <HistoryCard />
+                            <BmiCard
+                                bmi={data.bmi}
+                                startBmi={data.startBmi}
+                                goalBmi={data.goalBmi}
+                                heightCm={data.heightCm}
+                                goalWeight={data.goalWeight}
+                            />
+                            <HistoryCard entries={data.entriesNewest} isLoading={data.isLoading} onDelete={handleDelete} />
                         </div>
-
                     </div>
                 </div>
             </div>
