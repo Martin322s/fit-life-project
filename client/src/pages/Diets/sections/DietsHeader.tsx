@@ -1,9 +1,14 @@
 import type { JSX } from "react";
-import { DIETS_DATA } from "./dietsData";
 
-type DietsHeaderProps = { onToggleSidebar: () => void; onSwitchDiet: () => void };
+type Props = {
+    initials: string;
+    total: number;
+    isAdmin: boolean;
+    onToggleSidebar: () => void;
+    onAddDiet: () => void;
+};
 
-export default function DietsHeader({ onToggleSidebar, onSwitchDiet }: DietsHeaderProps): JSX.Element {
+export default function DietsHeader({ initials, total, isAdmin, onToggleSidebar, onAddDiet }: Props): JSX.Element {
     return (
         <div className="dt-header">
             <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", minWidth: 0, flex: 1 }}>
@@ -14,18 +19,12 @@ export default function DietsHeader({ onToggleSidebar, onSwitchDiet }: DietsHead
                 </button>
                 <div style={{ minWidth: 0, flex: 1 }}>
                     <h1 className="dt-title">Диети и хранителни планове</h1>
-                    <div className="dt-header-sub body-sm text-gray">
-                        {DIETS_DATA.activeDiet.icon} {DIETS_DATA.activeDiet.nameLong} · ден {DIETS_DATA.activeDiet.daysOnPlan}
-                    </div>
+                    <div className="dt-header-sub body-sm text-gray">{total} плана в каталога · видими за всички потребители</div>
                 </div>
             </div>
             <div className="dt-header-right">
-                <div className="dt-streak">
-                    <span>🔥</span>
-                    <span className="body-sm" style={{ color: "var(--c-acid,#C8FF00)", fontWeight: 600 }}>{DIETS_DATA.user.streak} дни</span>
-                </div>
-                <button type="button" className="btn-primary btn-sm" onClick={onSwitchDiet}>⇄ Смени диета</button>
-                <div className="dt-avatar">{DIETS_DATA.user.initials}</div>
+                {isAdmin && <button type="button" className="btn-primary btn-sm" onClick={onAddDiet}>+ Нова диета</button>}
+                <div className="dt-avatar">{initials}</div>
             </div>
         </div>
     );
