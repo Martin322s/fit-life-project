@@ -1,75 +1,85 @@
-# React + TypeScript + Vite
+# FitLife — Web Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript + Vite single-page application. Talks to the FitLife server API and is the primary surface for the web experience including the admin panel.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** with React Compiler enabled
+- **TypeScript 5.9**
+- **Vite 8** (build tool, dev server)
+- **React Router 7** (client-side routing)
+- **ESLint 9** with TypeScript + React Hooks plugins
 
-## React Compiler
+## Project Structure
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+client/
+├── src/
+│   ├── components/     # Shared route guards (AdminRoute, GuestRoute, PrivateRoute)
+│   ├── context/        # AuthContext — global auth state
+│   ├── hooks/          # Data-fetching hooks per feature
+│   ├── layout/         # Navbar, Footer, Sidebar, MainLayout
+│   ├── lib/            # Utility helpers (calculators, label maps)
+│   └── pages/          # Feature pages (Dashboard, Calories, Weight, Recipes, …)
+├── public/             # Static assets
+├── index.html
+├── vite.config.ts
+└── .env                # VITE_API_BASE_URL
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Environment Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Create `client/.env` (copy from `client/.env.example`):
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_API_BASE_URL=http://localhost:3001
 ```
+
+For production point this to the deployed server URL.
+
+## Setup & Development
+
+```bash
+npm install
+npm run dev
+```
+
+App runs at http://localhost:5173.
+
+## Available Scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Start Vite dev server with HMR |
+| `npm run build` | Type-check and produce production bundle in `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Run ESLint |
+
+## Production Build
+
+```bash
+npm run build
+```
+
+The output is in `dist/`. Deploy `dist/` to any static host.
+
+For Netlify, `public/_redirects` already contains `/* /index.html 200` for SPA routing. For Vercel or other hosts, configure an equivalent fallback rewrite to `/index.html`.
+
+## Route Overview
+
+| Path | Access | Description |
+|---|---|---|
+| `/` | Public | Landing / home |
+| `/login` `/register` | Guest only | Auth pages |
+| `/forgot-password` | Guest only | Password reset request |
+| `/dashboard` | Auth | Main dashboard |
+| `/calories` | Auth | Meal & calorie tracking |
+| `/weight` | Auth | Weight / progress tracking |
+| `/recipes` | Auth | Recipe browser |
+| `/diets` | Auth | Diet plans |
+| `/training-plans` | Auth | Training plan browser |
+| `/products` | Auth | Nutrition products |
+| `/challenges` | Auth | Fitness challenges |
+| `/calculators` | Auth | BMI, TDEE, and other calculators |
+| `/profile` | Auth | User profile |
+| `/admin` | Admin only | User & stat management |

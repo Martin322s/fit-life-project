@@ -1,56 +1,121 @@
 # FitLife
 
-FitLife is a full-stack fitness tracking capstone project for Bulgarian-speaking users.
+FitLife is a full-stack fitness tracking application for Bulgarian-speaking users. It consists of three surfaces that share a single REST API backend.
 
-## Stack
+## Project Structure
 
-- `server/` - Next.js App Router API, Drizzle ORM, Neon PostgreSQL, JWT auth.
-- `client/` - React + Vite web client.
-- `mobile/` - Expo / React Native app.
+```
+fit-life-project/
+├── server/   # Next.js API backend (port 3001 dev / 3000 prod)
+├── client/   # React + Vite web app (port 5173)
+└── mobile/   # Expo / React Native app (iOS, Android, Web)
+```
 
-## Main Features
+## Technologies
 
-- Register, login, logout, session restore, forgot password, reset password.
-- Dashboard, calories and meals, weight/progress, hydration API, recipes, diets, training plans, nutrition products, challenges, calculators, profile.
-- Web-only admin panel for user/stat management.
-- Contact and password reset emails through EmailJS.
+| Layer | Stack |
+|---|---|
+| Server | Next.js 16 (App Router), TypeScript, Drizzle ORM, Neon PostgreSQL, JWT, EmailJS |
+| Client | React 19, TypeScript, Vite 8, React Router 7, React Compiler |
+| Mobile | Expo 54, React Native 0.81, Expo Router 6, AsyncStorage |
 
-## Local Setup
+## Features
+
+- Authentication — register, login, logout, session restore, forgot/reset password
+- Dashboard — calories & meals, weight/progress tracking, hydration
+- Content — recipes, diets, training plans, nutrition products, challenges, calculators
+- Profile management
+- Admin panel (web only) — user and stat management
+- Contact form via EmailJS
+
+## Prerequisites
+
+- Node.js 18+
+- npm 9+
+- A [Neon](https://neon.tech) PostgreSQL database (or any PostgreSQL instance)
+- Expo CLI (`npm install -g expo-cli`) for mobile
+
+## Quick Start
+
+### 1. Environment files
+
+Copy each example and fill in real values:
+
+```bash
+cp server/.env.example server/.env.local
+cp client/.env.example client/.env
+cp mobile/.env.example mobile/.env   # create manually if not present
+```
+
+Minimum required values:
+
+```env
+# server/.env.local
+JWT_SECRET=your-secret
+DATABASE_URL=postgresql://...
+CLIENT_URL=http://localhost:5173
+SERVER_URL=http://localhost:3001
+
+# client/.env
+VITE_API_BASE_URL=http://localhost:3001
+
+# mobile/.env
+EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
+# For Android emulator use: http://10.0.2.2:3001
+# For physical device use: http://YOUR_LAN_IP:3001
+```
+
+### 2. Install dependencies
+
+```bash
+cd server && npm install
+cd ../client && npm install
+cd ../mobile && npm install
+```
+
+### 3. Prepare the database
 
 ```bash
 cd server
-npm install
 npm run db:migrate
-npm run build
-npm run start
+npm run db:seed
+npm run db:seed:recipes
+npm run db:seed:diets
+npm run db:seed:products
+npm run db:seed:training-plans
+npm run db:seed:challenges
 ```
+
+### 4. Start all services
+
+Open three terminal windows:
 
 ```bash
-cd client
-npm install
-npm run dev
+# Terminal 1 — API server
+cd server && npm run dev
+
+# Terminal 2 — Web client
+cd client && npm run dev
+
+# Terminal 3 — Mobile app
+cd mobile && npm run start
 ```
 
-```bash
-cd mobile
-npm install
-npm run start
-```
+- Web client: http://localhost:5173
+- API server: http://localhost:3001
+- Mobile: scan the QR code in the Expo terminal with Expo Go
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for environment variables, production deployment, seed commands, and smoke tests.
+## Deployment
 
-## Environment Files
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment steps, all environment variables, seed commands, and a smoke test checklist.
 
-Copy the examples and fill in real values:
+## Mobile APK (Android)
 
-- `server/.env.example`
-- `client/.env.example`
-- `mobile/.env.example`
+Pre-built APK: https://expo.dev/accounts/martin13s18/projects/fit-life/builds/ec050589-bc7a-4f19-918f-3ee2fb0ecaab
 
-Never commit real `.env` files.
+## Notes
 
-## Test Credentials
-
-Use seeded accounts if your local database has been seeded, or register a fresh user through the app.
-
-https://expo.dev/accounts/martin13s18/projects/fit-life/builds/ec050589-bc7a-4f19-918f-3ee2fb0ecaab - mobile apk link
+- Never commit real `.env` files.
+- The server runs on port 3001 in dev mode (`npm run dev`) and port 3000 in production (`npm run start`). Align your `VITE_API_BASE_URL` accordingly.
+- All user-facing copy is in Bulgarian.
+- Admin routes are web-only and restricted to admin-role JWT tokens.
