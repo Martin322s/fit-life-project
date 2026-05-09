@@ -87,13 +87,13 @@ Open three terminal windows:
 
 ```bash
 # Terminal 1 — API server
-cd server && npm run dev
+cd server && npm start
 
 # Terminal 2 — Web client
 cd client && npm run dev
 
 # Terminal 3 — Mobile app
-cd mobile && npm run start
+cd mobile && npm start
 ```
 
 - Web client: http://localhost:5173
