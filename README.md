@@ -79,11 +79,6 @@ cd ../mobile && npm install
 cd server
 npm run db:migrate
 npm run db:seed
-npm run db:seed:recipes
-npm run db:seed:diets
-npm run db:seed:products
-npm run db:seed:training-plans
-npm run db:seed:challenges
 ```
 
 ### 4. Start all services
