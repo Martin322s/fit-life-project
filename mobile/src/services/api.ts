@@ -1,34 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
-
-// EXPO_PUBLIC_* vars are inlined at bundle time by Metro's babel transform.
-// They must be accessed as `process.env.EXPO_PUBLIC_*` — no optional chaining,
-// no custom `declare const process`, or the transform won't recognise the node.
-const envApiBaseUrl: string | undefined = process.env.EXPO_PUBLIC_API_BASE_URL;
-const extraApiBaseUrl = Constants.expoConfig?.extra?.apiBaseUrl as string | undefined;
-
-// Resolution order:
-// 1. EXPO_PUBLIC_API_BASE_URL — inlined by Metro at EAS build time via eas.json env
-// 2. extra.apiBaseUrl         — set in app.json, compiled into the bundle as a fallback
-// 3. Dev-only emulator/sim loopbacks — NEVER reached in a production APK/AAB
-export const API_BASE_URL: string =
-  envApiBaseUrl ??
-  extraApiBaseUrl ??
-  (Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000');
-
-export const TOKEN_KEY = 'fitlife-token';
-
-if (__DEV__) {
-  const src = envApiBaseUrl
-    ? 'EXPO_PUBLIC_API_BASE_URL'
-    : extraApiBaseUrl
-      ? 'extra.apiBaseUrl'
-      : 'dev-fallback (emulator only)';
-  console.log(`[API] Base URL: ${API_BASE_URL}  (source: ${src})`);
-}
+import { AppConfig } from '../config/app.config';
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
+
+export const TOKEN_KEY = 'fitlife-token';
 
 export async function getToken(): Promise<string | null> {
   return AsyncStorage.getItem(TOKEN_KEY);
@@ -73,10 +48,8 @@ const ERROR_MESSAGES: Record<NetworkErrorKind, string> = {
 
 // ─── Core request ─────────────────────────────────────────────────────────────
 
-const REQUEST_TIMEOUT_MS = 15_000;
-
 export async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
+  const url = `${AppConfig.apiUrl}${path}`;
   const method = opts.method ?? 'GET';
   const token = await getToken();
 
@@ -86,7 +59,7 @@ export async function request<T>(path: string, opts: RequestInit = {}): Promise<
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), AppConfig.apiTimeout);
 
   let res: Response;
   try {
