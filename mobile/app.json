@@ -51,6 +51,7 @@
       "reactCompiler": true
     },
     "extra": {
+      "apiBaseUrl": "https://fit-life-api.netlify.app",
       "router": {},
       "eas": {
         "projectId": "da2e4ce9-427d-4693-84cb-01464e54c580"
