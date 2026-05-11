@@ -45,11 +45,23 @@ function resolveApiUrl(): string {
   if (override) return override;
 
   // Extract the Metro host from the live Expo manifest.
-  // manifest2 is set by Expo Go and dev-client builds during `expo start`.
-  // legacyHost covers older Expo SDK / React Native CLI setups.
-  const manifest2Host = (Constants.manifest2 as any)?.extra?.expoClient?.hostUri;
-  const legacyHost = (Constants as any).manifest?.debuggerHost;
-  const rawUri: string | undefined = manifest2Host ?? legacyHost;
+  //
+  // Resolution order (SDK 54+):
+  //   1. Constants.expoGoConfig.debuggerHost  — the documented SDK 54 API
+  //   2. Constants.manifest2.extra.expoClient.hostUri  — older Expo Go API
+  //   3. Constants.manifest.debuggerHost  — legacy; its getter throws in SDK 54
+  //      when the embedded app.config is unavailable, so we wrap it in try/catch.
+  let rawUri: string | undefined;
+  try {
+    rawUri =
+      (Constants as any).expoGoConfig?.debuggerHost ??
+      (Constants.manifest2 as any)?.extra?.expoClient?.hostUri ??
+      (Constants as any).manifest?.debuggerHost ??
+      undefined;
+  } catch {
+    // Constants.manifest throws ERR_CONSTANTS_MANIFEST_UNAVAILABLE in SDK 54
+    // when the embedded app.config hasn't loaded yet — safe to ignore.
+  }
 
   if (rawUri) {
     const host = rawUri.split(':')[0]; // strip the Metro port, keep the IP/hostname
