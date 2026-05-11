@@ -1,186 +1,175 @@
-# FitLife
+# Fit Life
 
-FitLife is a full-stack fitness tracking application for Bulgarian-speaking users. It consists of three surfaces that share a single REST API backend.
+Fit Life is a fitness tracking project with three parts:
 
-## Project Structure
-
-```
+```text
 fit-life-project/
-├── server/   # Next.js API backend (port 3001 dev / 3000 prod)
-├── client/   # React + Vite web app (port 5173)
-└── mobile/   # Expo / React Native app (iOS, Android, Web)
+|-- client/   Web app, React + Vite
+|-- mobile/   Mobile app, Expo + React Native
+`-- server/   API/server app, Next.js + database scripts
 ```
 
-## Technologies
+This guide shows the simplest way to start the app locally after cloning the project.
 
-| Layer | Stack |
-|---|---|
-| Server | Next.js 16 (App Router), TypeScript, Drizzle ORM, Neon PostgreSQL, JWT, EmailJS |
-| Client | React 19, TypeScript, Vite 8, React Router 7, React Compiler |
-| Mobile | Expo 54, React Native 0.81, Expo Router 6, AsyncStorage |
+## Requirements
 
-## Features
+Install these first:
 
-- Authentication — register, login, logout, session restore, forgot/reset password
-- Dashboard — calories & meals, weight/progress tracking, hydration
-- Content — recipes, diets, training plans, nutrition products, challenges, calculators
-- Profile management
-- Admin panel (web only) — user and stat management
-- Contact form via EmailJS
+- Node.js 18 or newer
+- npm
+- Expo Go on your phone, if you want to run the mobile app on a real device
+- A PostgreSQL/Neon database connection for the server
 
-## Prerequisites
+## 1. Clone the Project
 
-- Node.js 18+
-- npm 9+
-- A [Neon](https://neon.tech) PostgreSQL database (or any PostgreSQL instance)
-- Expo CLI (`npm install -g expo-cli`) for mobile
-
-## Quick Start
-
-### 1. Environment files
-
-Copy each example and fill in real values:
-
-```bash
-cp server/.env.example server/.env.local
-cp client/.env.example client/.env
-cp mobile/.env.example mobile/.env   # create manually if not present
+```powershell
+git clone <repository-url>
+cd fit-life-project
 ```
 
-Minimum required values:
+## 2. Start the Server
 
-```env
-# server/.env.local
-JWT_SECRET=your-secret
-DATABASE_URL=postgresql://...
-CLIENT_URL=http://localhost:5173
-SERVER_URL=http://localhost:3001
+Open a terminal in the main project folder and run:
 
-# client/.env
-VITE_API_BASE_URL=http://localhost:3001
-
-# mobile/.env
-EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
-# For Android emulator use: http://10.0.2.2:3001
-# For physical device use: http://YOUR_LAN_IP:3001
-```
-
-### 2. Install dependencies
-
-```bash
-cd server && npm install
-cd ../client && npm install
-cd ../mobile && npm install
-```
-
-### 3. Prepare the database
-
-```bash
+```powershell
 cd server
+npm install
+copy .env.example .env.local
+```
+
+Open `server/.env.local` and fill in the real values, especially the database connection.
+
+Then prepare the database:
+
+```powershell
 npm run db:migrate
 npm run db:seed
 ```
 
-### 4. Start all services
+If you need to seed only specific data, you can run these instead:
 
-Open three terminal windows:
-
-```bash
-# Terminal 1 — API server
-cd server && npm start
-
-# Terminal 2 — Web client
-cd client && npm run dev
-
-# Terminal 3 — Mobile app
-cd mobile && npm start
+```powershell
+npm run db:seed:diets
+npm run db:seed:recipes
+npm run db:seed:products
+npm run db:seed:training-plans
+npm run db:seed:challenges
 ```
 
-- Web client: http://localhost:5173
-- API server: http://localhost:3001
-- Mobile: scan the QR code in the Expo terminal with Expo Go
+Start the server:
 
-## Deployment
+```powershell
+npm run dev
+```
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment steps, all environment variables, seed commands, and a smoke test checklist.
+Server URL:
 
-## Mobile APK (Android)
+```text
+http://localhost:3001
+```
 
-Pre-built APK: https://expo.dev/accounts/martin13s18/projects/fit-life/builds/ec050589-bc7a-4f19-918f-3ee2fb0ecaab
+Keep this terminal open.
 
-## Backup System
+## 3. Start the Web Client
 
-FitLife includes a simple database backup system for disaster recovery and data protection.
+Open a second terminal in the main project folder and run:
 
-### What it does
+```powershell
+cd client
+npm install
+copy .env.example .env
+npm run dev
+```
 
-- Exports the entire PostgreSQL database to a timestamped `.sql` file
-- Saves backups to `server/backups/database/backup-YYYY-MM-DD-HH-mm.sql`
-- Uses `pg_dump` when available, or a Node.js `pg`-based export as fallback
-- Includes a cleanup script that removes backups older than 7 days
+Web client URL:
 
-### Run a backup manually
+```text
+http://localhost:5173
+```
 
-```bash
+Keep this terminal open.
+
+## 4. Start the Mobile App
+
+Open a third terminal in the main project folder and run:
+
+```powershell
+cd mobile
+npm install
+copy .env.example .env
+npm run start
+```
+
+Expo will start. You can then:
+
+```text
+a  run on Android emulator
+i  run on iOS simulator, macOS only
+w  run in web preview
+```
+
+You can also scan the QR code with Expo Go on your phone.
+
+For Android emulator, the mobile API URL usually needs to be:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3001
+```
+
+For a real phone, use your computer's local network IP instead:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=http://YOUR_LOCAL_IP:3001
+```
+
+Example:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.50:3001
+```
+
+## Quick Commands
+
+After the first setup, you usually only need these three terminals:
+
+```powershell
 cd server
+npm run dev
+```
+
+```powershell
+cd client
+npm run dev
+```
+
+```powershell
+cd mobile
+npm run start
+```
+
+## Useful Server Commands
+
+```powershell
+npm run db:migrate
+npm run db:seed
+npm run db:seed:diets
+npm run db:seed:recipes
+npm run db:seed:products
+npm run db:seed:training-plans
+npm run db:seed:challenges
+```
+
+Backup commands:
+
+```powershell
 npm run backup:db
-```
-
-Example output:
-```
-[backup] FitLife Database Backup
-[backup] File: backup-2025-05-11-14-30.sql
-[backup] Connected to: postgresql://***:***@host/db
-[backup] Tables: users, recipes, diets, ...
-[backup] Done!  backup-2025-05-11-14-30.sql  (142.3 KB)
-```
-
-### Clean up old backups
-
-```bash
-cd server
 npm run backup:clean
 ```
 
-Removes any `.sql` files older than 7 days from `server/backups/database/`.
-
-### Automating backups (future)
-
-For scheduled backups in production, you can run `npm run backup:db` on a schedule:
-
-**Windows Task Scheduler:**
-```
-Action: node C:\path\to\server\scripts\backups\backup-db.js
-Trigger: Daily at 02:00
-```
-
-**Linux/macOS cron job** (add via `crontab -e`):
-```
-0 2 * * * cd /path/to/server && npm run backup:db
-```
-
-**GitHub Actions** (CI/CD, example `.github/workflows/backup.yml`):
-```yaml
-on:
-  schedule:
-    - cron: '0 2 * * *'   # every day at 02:00 UTC
-jobs:
-  backup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cd server && npm ci && npm run backup:db
-```
-
-### Notes
-
-- Backup `.sql` files are git-ignored. Only the directory structure is tracked.
-- If `pg_dump` is not installed, the script falls back to a Node.js export automatically.
-- To install PostgreSQL client tools (for pg_dump): https://www.postgresql.org/download/
-
 ## Notes
 
-- Never commit real `.env` files.
-- The server runs on port 3001 in dev mode (`npm run dev`) and port 3000 in production (`npm run start`). Align your `VITE_API_BASE_URL` accordingly.
-- All user-facing copy is in Bulgarian.
-- Admin routes are web-only and restricted to admin-role JWT tokens.
+- Do not commit real `.env` files.
+- The server runs on `http://localhost:3001` in development.
+- The web client runs on `http://localhost:5173`.
+- The mobile app is started with Expo from the `mobile/` folder.
+- Production/deployment notes are in [DEPLOYMENT.md](./DEPLOYMENT.md).
