@@ -36,3 +36,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backups — keep the folder, ignore generated SQL files
+/backups/database/*.sql

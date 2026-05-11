@@ -16,7 +16,9 @@
     "db:seed:diets": "tsx db/seed-diets.ts",
     "db:seed:training-plans": "tsx db/seed-training-plans.ts",
     "db:seed:products": "tsx db/seed-products.ts",
-    "db:seed:challenges": "tsx db/seed-challenges.ts"
+    "db:seed:challenges": "tsx db/seed-challenges.ts",
+    "backup:db": "node scripts/backups/backup-db.js",
+    "backup:clean": "node scripts/backups/clean-backups.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -31,6 +33,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
@@ -38,6 +41,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "pg": "^8.20.0",
     "tsx": "^4.21.0",
     "typescript": "^5",
     "ws": "^8.20.0"

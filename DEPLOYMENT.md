@@ -161,6 +161,41 @@ Mobile:
 - Check browser Network tab for no production calls to localhost.
 - Submit Contact form and confirm EmailJS delivery.
 
+## Backup System
+
+FitLife includes a database backup system for disaster recovery.
+
+### Capabilities
+
+- **Automated backup support** — exportable via npm script, ready to wire into any CI/CD or scheduler
+- **Database recovery** — produces a plain SQL file that can be restored with `psql $DATABASE_URL < backup.sql`
+- **Safe SQL storage** — backups are stored in `server/backups/database/` and excluded from git via `.gitignore`
+
+### Commands
+
+```bash
+cd server
+npm run backup:db     # create a timestamped backup
+npm run backup:clean  # remove backups older than 7 days
+```
+
+### Backup location
+
+```
+server/backups/database/backup-YYYY-MM-DD-HH-mm.sql
+```
+
+### Restoring from a backup
+
+```bash
+psql "$DATABASE_URL" < server/backups/database/backup-2025-05-11-14-30.sql
+```
+
+### Automation
+
+Schedule `npm run backup:db` with cron (Linux/macOS) or Task Scheduler (Windows).
+See the [Backup System](./README.md#backup-system) section in README.md for full automation examples.
+
 ## Current Product Notes
 
 - The Settings tab/API was intentionally removed from the active app surface.

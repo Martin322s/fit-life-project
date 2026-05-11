@@ -108,6 +108,76 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment steps, all enviro
 
 Pre-built APK: https://expo.dev/accounts/martin13s18/projects/fit-life/builds/ec050589-bc7a-4f19-918f-3ee2fb0ecaab
 
+## Backup System
+
+FitLife includes a simple database backup system for disaster recovery and data protection.
+
+### What it does
+
+- Exports the entire PostgreSQL database to a timestamped `.sql` file
+- Saves backups to `server/backups/database/backup-YYYY-MM-DD-HH-mm.sql`
+- Uses `pg_dump` when available, or a Node.js `pg`-based export as fallback
+- Includes a cleanup script that removes backups older than 7 days
+
+### Run a backup manually
+
+```bash
+cd server
+npm run backup:db
+```
+
+Example output:
+```
+[backup] FitLife Database Backup
+[backup] File: backup-2025-05-11-14-30.sql
+[backup] Connected to: postgresql://***:***@host/db
+[backup] Tables: users, recipes, diets, ...
+[backup] Done!  backup-2025-05-11-14-30.sql  (142.3 KB)
+```
+
+### Clean up old backups
+
+```bash
+cd server
+npm run backup:clean
+```
+
+Removes any `.sql` files older than 7 days from `server/backups/database/`.
+
+### Automating backups (future)
+
+For scheduled backups in production, you can run `npm run backup:db` on a schedule:
+
+**Windows Task Scheduler:**
+```
+Action: node C:\path\to\server\scripts\backups\backup-db.js
+Trigger: Daily at 02:00
+```
+
+**Linux/macOS cron job** (add via `crontab -e`):
+```
+0 2 * * * cd /path/to/server && npm run backup:db
+```
+
+**GitHub Actions** (CI/CD, example `.github/workflows/backup.yml`):
+```yaml
+on:
+  schedule:
+    - cron: '0 2 * * *'   # every day at 02:00 UTC
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd server && npm ci && npm run backup:db
+```
+
+### Notes
+
+- Backup `.sql` files are git-ignored. Only the directory structure is tracked.
+- If `pg_dump` is not installed, the script falls back to a Node.js export automatically.
+- To install PostgreSQL client tools (for pg_dump): https://www.postgresql.org/download/
+
 ## Notes
 
 - Never commit real `.env` files.
