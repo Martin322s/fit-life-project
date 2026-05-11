@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+import { API_BASE_URL as BASE } from "./apiConfig";
 
 function getToken(): string | null {
   return localStorage.getItem("fitlife-token") ?? sessionStorage.getItem("fitlife-token");
