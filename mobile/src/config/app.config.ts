@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 // ─── Edit these two lines when the backend moves ──────────────────────────────
 
 const PRODUCTION_API_URL = 'https://fit-life-api.netlify.app';
-const LOCAL_API_PORT = 3000;
+const LOCAL_API_PORT = 3001;
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 
