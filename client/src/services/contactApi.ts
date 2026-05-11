@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+import { API_BASE_URL as BASE } from "./apiConfig";
 
 export type ContactInput = {
   firstName: string;
