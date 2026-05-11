@@ -1,6 +1,4 @@
-// All requests go to /api/* — Vite proxies them to the Next.js server in dev.
-// In production set VITE_API_BASE_URL to the deployed server origin.
-const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+import { API_BASE_URL as BASE } from "./apiConfig";
 
 export type AuthUser = {
   id: string;
