@@ -11,7 +11,14 @@ function allowedOrigins(): string[] {
     .filter((origin): origin is string => Boolean(origin));
 
   if (process.env.NODE_ENV !== "production") {
-    configured.push("http://localhost:5173", "http://localhost:3000");
+    configured.push(
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:8081",
+      "http://127.0.0.1:8081",
+      "http://localhost:3001",
+      "http://127.0.0.1:3001",
+    );
   }
 
   return Array.from(new Set(configured));
@@ -30,6 +37,7 @@ export function middleware(request: NextRequest) {
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Access-Control-Max-Age": "86400",
+        Vary: "Origin",
       },
     });
   }
@@ -38,6 +46,7 @@ export function middleware(request: NextRequest) {
   if (allowed) response.headers.set("Access-Control-Allow-Origin", allowed);
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.headers.set("Vary", "Origin");
   return response;
 }
 
