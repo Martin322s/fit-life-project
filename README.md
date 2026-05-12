@@ -1,35 +1,23 @@
 # Fit Life
 
-Fit Life is a fitness tracking project with three parts:
+Fitness tracking app with three parts:
 
-```text
-fit-life-project/
-|-- client/   Web app, React + Vite
-|-- mobile/   Mobile app, Expo + React Native
-`-- server/   API/server app, Next.js + database scripts
 ```
-
-This guide shows the simplest way to start the app locally after cloning the project.
+fit-life-project/
+├── server/   API — Next.js + PostgreSQL
+├── client/   Web app — React + Vite
+└── mobile/   Mobile app — Expo + React Native
+```
 
 ## Requirements
 
-Install these first:
+- Node.js 18+
+- PostgreSQL / Neon database
+- Expo Go on your phone (optional, for physical device testing)
 
-- Node.js 18 or newer
-- npm
-- Expo Go on your phone, if you want to run the mobile app on a real device
-- A PostgreSQL/Neon database connection for the server
+---
 
-## 1. Clone the Project
-
-```powershell
-git clone <repository-url>
-cd fit-life-project
-```
-
-## 2. Start the Server
-
-Open a terminal in the main project folder and run:
+## 1. Server
 
 ```powershell
 cd server
@@ -37,42 +25,26 @@ npm install
 copy .env.example .env.local
 ```
 
-Open `server/.env.local` and fill in the real values, especially the database connection.
+Edit `server/.env.local` and fill in the database connection string.
 
-Then prepare the database:
+Prepare the database:
 
 ```powershell
 npm run db:migrate
 npm run db:seed
 ```
 
-If you need to seed only specific data, you can run these instead:
-
-```powershell
-npm run db:seed:diets
-npm run db:seed:recipes
-npm run db:seed:products
-npm run db:seed:training-plans
-npm run db:seed:challenges
-```
-
-Start the server:
+Start:
 
 ```powershell
 npm run dev
 ```
 
-Server URL:
+Runs on `http://localhost:3001`
 
-```text
-http://localhost:3001
-```
+---
 
-Keep this terminal open.
-
-## 3. Start the Web Client
-
-Open a second terminal in the main project folder and run:
+## 2. Web Client
 
 ```powershell
 cd client
@@ -81,95 +53,31 @@ copy .env.example .env
 npm run dev
 ```
 
-Web client URL:
+Runs on `http://localhost:5173`
 
-```text
-http://localhost:5173
-```
+---
 
-Keep this terminal open.
-
-## 4. Start the Mobile App
-
-Open a third terminal in the main project folder and run:
+## 3. Mobile App
 
 ```powershell
 cd mobile
 npm install
-copy .env.example .env
 npm run start
 ```
 
-Expo will start. You can then:
+Press `a` for Android emulator, `i` for iOS simulator, `w` for browser, or scan the QR code with Expo Go.
 
-```text
-a  run on Android emulator
-i  run on iOS simulator, macOS only
-w  run in web preview
-```
+The app connects to `localhost:3001` automatically. Android emulator uses `10.0.2.2:3001`.
 
-You can also scan the QR code with Expo Go on your phone.
+---
 
-For Android emulator, the mobile API URL usually needs to be:
+## Hosted
 
-```env
-EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3001
-```
+- Web: https://fitlife-bg.netlify.app
+- Android APK: https://expo.dev/accounts/martin13s18/projects/fit-life/builds/4d49c3a1-48dd-484b-bded-2e005690cbb3
 
-For a real phone, use your computer's local network IP instead:
+## Download the Mobile App
 
-```env
-EXPO_PUBLIC_API_BASE_URL=http://YOUR_LOCAL_IP:3001
-```
+Scan this QR code to download the Android APK directly to your phone.
 
-Example:
-
-```env
-EXPO_PUBLIC_API_BASE_URL=http://192.168.1.50:3001
-```
-
-## Quick Commands
-
-After the first setup, you usually only need these three terminals:
-
-```powershell
-cd server
-npm run dev
-```
-
-```powershell
-cd client
-npm run dev
-```
-
-```powershell
-cd mobile
-npm run start
-```
-
-## Useful Server Commands
-
-```powershell
-npm run db:migrate
-npm run db:seed
-npm run db:seed:diets
-npm run db:seed:recipes
-npm run db:seed:products
-npm run db:seed:training-plans
-npm run db:seed:challenges
-```
-
-Backup commands:
-
-```powershell
-npm run backup:db
-npm run backup:clean
-```
-
-## Notes
-
-- Do not commit real `.env` files.
-- The server runs on `http://localhost:3001` in development.
-- The web client runs on `http://localhost:5173`.
-- The mobile app is started with Expo from the `mobile/` folder.
-- Production/deployment notes are in [DEPLOYMENT.md](./DEPLOYMENT.md).
+<img src="mobile-app-qr.svg" alt="QR code for downloading the Fit Life Android app" style="display:block;width:min(520px,100%);height:auto;" />
