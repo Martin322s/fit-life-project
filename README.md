@@ -1,23 +1,248 @@
 # Fit Life
 
-Fitness tracking app with three parts:
+Fit Life is a full-stack fitness and nutrition tracking application for Bulgarian-speaking users. It helps users register and manage a profile, track meals and calories, log weight and body progress, follow workouts and training plans, explore recipes and diets, join challenges, track hydration, and browse nutrition products.
+
+The project contains a web app, a mobile app, and an API server backed by a PostgreSQL database.
 
 ```
 fit-life-project/
-├── server/   API — Next.js + PostgreSQL
-├── client/   Web app — React + Vite
-└── mobile/   Mobile app — Expo + React Native
++-- server/   API - Next.js + PostgreSQL + Drizzle ORM
++-- client/   Web app - React + Vite
++-- mobile/   Mobile app - Expo + React Native
 ```
 
-## Requirements
+## Project Description
+
+Fit Life is designed around everyday health tracking:
+
+- Visitors can view public pages such as home, about, contact, recipes, diets, training plans, challenges, products, and legal pages.
+- Registered users can sign in, edit their profile, set nutrition and fitness goals, log meals, hydration, workouts, and progress entries.
+- Users can browse structured fitness content such as recipes, diet guides, training plans, products, and challenges.
+- Admin users can access admin-only routes for user and application management.
+- The mobile app gives users a phone-first experience for the same core fitness workflows.
+
+All visible application text is intended to be in Bulgarian.
+
+## Architecture
+
+### High-Level System
+
+```mermaid
+flowchart LR
+  User[User] --> Web[Web Client<br/>React + Vite]
+  User --> Mobile[Mobile App<br/>Expo + React Native]
+  Web --> API[API Server<br/>Next.js Route Handlers]
+  Mobile --> API
+  API --> DB[(PostgreSQL / Neon)]
+  API --> Auth[JWT Auth<br/>HTTP cookies / tokens]
+  API --> Email[EmailJS<br/>contact + password reset]
+```
+
+### Front End
+
+The web client lives in `client/` and is built with React 19, TypeScript, Vite, and React Router DOM. It contains public pages, authenticated dashboard pages, admin-only pages, API service wrappers, reusable hooks, and shared layout components.
+
+### Mobile App
+
+The mobile app lives in `mobile/` and is built with Expo, React Native, TypeScript, and Expo Router. It uses file-based routes under `mobile/app/`, shared UI primitives under `mobile/src/components/`, service wrappers under `mobile/src/services/`, and a centralized dark theme in `mobile/src/theme.ts`.
+
+### Back End
+
+The API server lives in `server/` and uses Next.js route handlers under `server/app/api/`. It handles authentication, profiles, meals, workouts, goals, progress, hydration, recipes, diets, training plans, products, challenges, user challenges, contact messages, and admin data.
+
+### Database
+
+The database is PostgreSQL, commonly run through Neon. Drizzle ORM defines the schema in `server/db/schema.ts`, migrations are stored under `server/drizzle/`, and seed scripts live in `server/db/`.
+
+### API Communication
+
+- Web client API base URL: `client/src/services/apiConfig.ts`
+- Mobile API base URL: `mobile/src/config/app.config.ts`
+- Local API server: `http://localhost:3001`
+- Production API server: `https://fit-life-api.netlify.app`
+
+The clients call the API through feature-specific service files such as `authApi`, `profileApi`, `recipesApi`, `dietsApi`, `productsApi`, `hydrationApi`, and related modules.
+
+## Database Schema Design
+
+Main tables and relationships:
+
+```mermaid
+erDiagram
+  users ||--o{ workouts : has
+  users ||--o{ meals : logs
+  users ||--o{ goals : owns
+  users ||--o{ progress_entries : tracks
+  users ||--o{ hydration_entries : logs
+  users ||--o{ user_challenges : joins
+  challenges ||--o{ user_challenges : includes
+
+  users {
+    uuid id PK
+    text email UK
+    text first_name
+    text last_name
+    text password_hash
+    text role
+    real weight
+    real height_cm
+    integer calories_target
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  workouts {
+    uuid id PK
+    uuid user_id FK
+    text title
+    text type
+    integer duration_minutes
+    integer calories_burned
+    timestamp created_at
+  }
+
+  meals {
+    uuid id PK
+    uuid user_id FK
+    text title
+    integer calories
+    real protein
+    real carbs
+    real fat
+    timestamp created_at
+  }
+
+  goals {
+    uuid id PK
+    uuid user_id FK
+    text title
+    real target_value
+    real current_value
+    text unit
+    text status
+  }
+
+  progress_entries {
+    uuid id PK
+    uuid user_id FK
+    real weight_kg
+    real waist_cm
+    text notes
+    timestamp created_at
+  }
+
+  hydration_entries {
+    uuid id PK
+    uuid user_id FK
+    integer amount_ml
+    timestamp created_at
+  }
+
+  challenges {
+    uuid id PK
+    text title
+    text category
+    text target_type
+    real target_value
+    text target_unit
+  }
+
+  user_challenges {
+    uuid id PK
+    uuid user_id FK
+    uuid challenge_id FK
+    text status
+    real progress_value
+    timestamp started_at
+  }
+
+  recipes {
+    uuid id PK
+    text title
+    text category
+    integer calories
+    jsonb ingredients
+    jsonb instructions
+  }
+
+  diets {
+    uuid id PK
+    text title
+    text goal_type
+    integer duration_days
+    integer calories_per_day
+    jsonb rules
+    jsonb sample_menu
+  }
+
+  training_plans {
+    uuid id PK
+    text title
+    text goal_type
+    text level
+    integer duration_weeks
+    jsonb weekly_schedule
+  }
+
+  products {
+    uuid id PK
+    text name
+    text category
+    text brand
+    integer calories
+    jsonb tags
+  }
+```
+
+Content tables such as `recipes`, `diets`, `training_plans`, and `products` are global catalog data. User-owned tables reference `users.id` and are deleted when the user is deleted.
+
+## Repository Structure
+
+```text
+fit-life-project/
++-- README.md                 Project overview and setup guide
++-- DEPLOYMENT.md             Deployment notes
++-- mobile-app-qr.svg         QR code for Android APK download
++-- client/                   Web frontend
+|   +-- src/App.tsx           Web route definitions
+|   +-- src/pages/            Page-level features
+|   +-- src/layout/           Shared layout components
+|   +-- src/components/       Shared route guards and UI components
+|   +-- src/context/          Authentication context
+|   +-- src/hooks/            Data and local state hooks
+|   +-- src/services/         API clients for backend endpoints
++-- mobile/                   Expo mobile app
+|   +-- app/                  Expo Router screens and route groups
+|   +-- src/components/       Shared React Native UI primitives
+|   +-- src/context/          Authentication context
+|   +-- src/services/         API service wrappers
+|   +-- src/types/            Shared TypeScript types
+|   +-- src/theme.ts          Dark theme tokens
++-- server/                   Backend API
+    +-- app/api/              Next.js API route handlers
+    +-- db/schema.ts          Drizzle database schema
+    +-- db/seed*.ts           Seed scripts
+    +-- drizzle/              Generated migrations
+    +-- lib/                  Auth, validation, repositories
+    +-- scripts/backups/      Database backup scripts
+```
+
+## Local Development Setup
+
+### Requirements
 
 - Node.js 18+
 - PostgreSQL / Neon database
 - Expo Go on your phone (optional, for physical device testing)
 
----
+### Clone the Repository
 
-## 1. Server
+```powershell
+git clone <repository-url>
+cd fit-life-project
+```
+
+### 1. Server
 
 ```powershell
 cd server
@@ -34,6 +259,16 @@ npm run db:migrate
 npm run db:seed
 ```
 
+Optional feature-specific seed scripts:
+
+```powershell
+npm run db:seed:recipes
+npm run db:seed:diets
+npm run db:seed:training-plans
+npm run db:seed:products
+npm run db:seed:challenges
+```
+
 Start:
 
 ```powershell
@@ -42,9 +277,7 @@ npm run dev
 
 Runs on `http://localhost:3001`
 
----
-
-## 2. Web Client
+### 2. Web Client
 
 ```powershell
 cd client
@@ -55,9 +288,7 @@ npm run dev
 
 Runs on `http://localhost:5173`
 
----
-
-## 3. Mobile App
+### 3. Mobile App
 
 ```powershell
 cd mobile
@@ -67,7 +298,7 @@ npm run start
 
 Press `a` for Android emulator, `i` for iOS simulator, `w` for browser, or scan the QR code with Expo Go.
 
-The app connects to `localhost:3001` automatically. Android emulator uses `10.0.2.2:3001`.
+The app connects to the local API during development and to the production API in production builds.
 
 ---
 
