@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator,
+  View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { BackHeader } from '@/src/components/BackHeader';
 import { Card } from '@/src/components/Card';
 import { C, R } from '@/src/theme';
@@ -15,20 +16,22 @@ const GOALS: { value: ProfileGoalType; label: string }[] = [
 ];
 
 const ACTIVITIES: { value: ProfileActivityLevel; label: string }[] = [
-  { value: 'sedentary', label: 'Заседнал'        },
-  { value: 'light',     label: 'Лека активност'  },
+  { value: 'sedentary', label: 'Заседнал'          },
+  { value: 'light',     label: 'Лека активност'    },
   { value: 'moderate',  label: 'Умерена активност' },
-  { value: 'very',      label: 'Много активен'   },
+  { value: 'very',      label: 'Много активен'     },
 ];
 
 type Genders = 'male' | 'female';
 
 export default function Profile() {
   const [profile, setProfile] = useState<ApiProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving]   = useState(false);
-  const [saved, setSaved]     = useState(false);
-  const [error, setError]     = useState('');
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [saved, setSaved]             = useState(false);
+  const [error, setError]             = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError]         = useState('');
 
   // Editable form state
   const [firstName, setFirstName]   = useState('');
@@ -87,6 +90,49 @@ export default function Profile() {
     }
   };
 
+  const handlePickAvatar = async () => {
+    setAvatarError('');
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      setAvatarError('Нужен е достъп до галерията за избор на снимка.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setAvatarUploading(true);
+    try {
+      const { profile: updated } = await profileApi.uploadAvatar(
+        asset.uri,
+        asset.mimeType ?? 'image/jpeg',
+      );
+      setProfile(updated);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Грешка при качване.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarError('');
+    setAvatarUploading(true);
+    try {
+      const { profile: updated } = await profileApi.deleteAvatar();
+      setProfile(updated);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Грешка при премахване.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
@@ -94,6 +140,10 @@ export default function Profile() {
       </SafeAreaView>
     );
   }
+
+  const initials = profile
+    ? `${profile.firstName[0] ?? ''}${profile.lastName[0] ?? ''}`.toUpperCase()
+    : '?';
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -106,6 +156,39 @@ export default function Profile() {
       />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        {/* Avatar */}
+        <Card style={styles.avatarCard}>
+          <Text style={styles.sectionTitle}>Аватар</Text>
+          <View style={styles.avatarRow}>
+            {profile?.avatarUrl
+              ? <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+              : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
+                </View>
+              )
+            }
+            <View style={styles.avatarActions}>
+              <Pressable
+                style={[styles.avatarBtn, avatarUploading && styles.btnDisabled]}
+                onPress={handlePickAvatar}
+                disabled={avatarUploading}
+              >
+                {avatarUploading
+                  ? <ActivityIndicator color={C.primary} size="small" />
+                  : <Text style={styles.avatarBtnText}>📷 Избери снимка</Text>
+                }
+              </Pressable>
+              {profile?.avatarUrl && !avatarUploading && (
+                <Pressable style={styles.removeBtn} onPress={handleRemoveAvatar}>
+                  <Text style={styles.removeBtnText}>Премахни</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+          {avatarError ? <Text style={styles.avatarErr}>{avatarError}</Text> : null}
+        </Card>
 
         {/* Stats */}
         {bmi || profile?.currentWeight ? (
@@ -181,7 +264,7 @@ export default function Profile() {
           </View>
         </Card>
 
-        <Pressable style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
+        <Pressable style={[styles.saveBtn, saving && styles.btnDisabled]} onPress={handleSave} disabled={saving}>
           {saving
             ? <ActivityIndicator color="#fff" />
             : <Text style={styles.saveBtnText}>{saved ? '✓ Запазен' : 'Запази промените'}</Text>
@@ -202,24 +285,36 @@ function Field({ label, ...props }: { label: string } & React.ComponentProps<typ
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
-  scroll: { padding: 16, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  error: { color: C.red, fontSize: 13, marginBottom: 12, backgroundColor: C.red + '18', borderRadius: R.md, padding: 10 },
-  statsCard: { marginBottom: 16 },
-  statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  statLabel: { fontSize: 13, color: C.muted },
-  statVal: { fontSize: 13, fontWeight: '700', color: C.text },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 12 },
-  field: { marginBottom: 12 },
-  fieldLabel: { fontSize: 13, color: C.muted, marginBottom: 5, fontWeight: '600' },
-  input: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: C.text },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  chip: { borderWidth: 1, borderColor: C.border, borderRadius: R.full, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: C.card },
-  chipActive: { borderColor: C.primary, backgroundColor: C.primary + '22' },
-  chipText: { fontSize: 13, color: C.muted, fontWeight: '500' },
-  chipTextActive: { color: C.primary, fontWeight: '700' },
-  saveBtn: { backgroundColor: C.primary, borderRadius: R.md, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  root:               { flex: 1, backgroundColor: C.bg },
+  scroll:             { padding: 16, paddingBottom: 40 },
+  center:             { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  error:              { color: C.red, fontSize: 13, marginBottom: 12, backgroundColor: C.red + '18', borderRadius: R.md, padding: 10 },
+  statsCard:          { marginBottom: 16 },
+  statRow:            { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  statLabel:          { fontSize: 13, color: C.muted },
+  statVal:            { fontSize: 13, fontWeight: '700', color: C.text },
+  sectionTitle:       { fontSize: 14, fontWeight: '700', color: C.text, marginBottom: 12 },
+  field:              { marginBottom: 12 },
+  fieldLabel:         { fontSize: 13, color: C.muted, marginBottom: 5, fontWeight: '600' },
+  input:              { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: C.text },
+  chipRow:            { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  chip:               { borderWidth: 1, borderColor: C.border, borderRadius: R.full, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: C.card },
+  chipActive:         { borderColor: C.primary, backgroundColor: C.primary + '22' },
+  chipText:           { fontSize: 13, color: C.muted, fontWeight: '500' },
+  chipTextActive:     { color: C.primary, fontWeight: '700' },
+  saveBtn:            { backgroundColor: C.primary, borderRadius: R.md, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
+  btnDisabled:        { opacity: 0.6 },
+  saveBtnText:        { color: '#fff', fontSize: 15, fontWeight: '700' },
+  // Avatar
+  avatarCard:         { marginBottom: 16 },
+  avatarRow:          { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  avatar:             { width: 72, height: 72, borderRadius: 16 },
+  avatarPlaceholder:  { backgroundColor: C.primary + '33', alignItems: 'center', justifyContent: 'center' },
+  avatarInitials:     { color: C.primary, fontSize: 24, fontWeight: '800' },
+  avatarActions:      { flex: 1, gap: 8 },
+  avatarBtn:          { borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 9, alignItems: 'center' },
+  avatarBtnText:      { fontSize: 13, color: C.text, fontWeight: '600' },
+  removeBtn:          { paddingHorizontal: 14, paddingVertical: 6, alignItems: 'center' },
+  removeBtnText:      { fontSize: 12, color: C.red, fontWeight: '600' },
+  avatarErr:          { color: C.red, fontSize: 12, marginTop: 8 },
 });
