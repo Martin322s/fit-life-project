@@ -44,7 +44,7 @@ export type ApiProfile = {
   proteinTarget: number | null;
   carbsTarget: number | null;
   fatTarget: number | null;
-  avatarDataUrl: string | null;
+  avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -62,14 +62,36 @@ export type UpdateProfileInput = {
   proteinTarget?: number | null;
   carbsTarget?: number | null;
   fatTarget?: number | null;
-  avatarDataUrl?: string | null;
 };
 
 export const profileApi = {
   get: () => api<{ profile: ApiProfile }>("/api/profile"),
+
   update: (patch: UpdateProfileInput) =>
     api<{ profile: ApiProfile }>("/api/profile", {
       method: "PATCH",
       body: JSON.stringify(patch),
     }),
+
+  // Upload a new profile image. Sends multipart/form-data — do NOT set Content-Type manually.
+  uploadAvatar: async (file: File): Promise<{ profile: ApiProfile }> => {
+    const t = token();
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch(`${BASE}/api/profile/avatar`, {
+      method: "POST",
+      headers: {
+        ...(t ? { Authorization: `Bearer ${t}` } : {}),
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      throw new Error(body.message ?? "Грешка при качване на аватар.");
+    }
+    return res.json() as Promise<{ profile: ApiProfile }>;
+  },
+
+  deleteAvatar: () =>
+    api<{ profile: ApiProfile }>("/api/profile/avatar", { method: "DELETE" }),
 };
