@@ -1,0 +1,136 @@
+name: Project Backup
+
+# Runs daily at 03:00 UTC. Can also be triggered manually from the Actions tab.
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Daily Backup — DB + Storage
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      # AWS CLI picks these up automatically — no config file needed.
+      AWS_ACCESS_KEY_ID:     ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION:    auto
+      R2_ENDPOINT:           https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      APP_BUCKET:            ${{ secrets.R2_APP_BUCKET_NAME }}
+      BACKUP_BUCKET:         ${{ secrets.R2_BACKUP_BUCKET_NAME }}
+
+    steps:
+      # ── Timestamp ─────────────────────────────────────────────────────────────
+      - name: Generate backup timestamp
+        id: ts
+        run: |
+          TS=$(date -u '+%Y-%m-%d-%H-%M')
+          echo "TS=$TS" >> "$GITHUB_OUTPUT"
+          echo "Backup run: $TS UTC"
+
+      # ── PostgreSQL client ──────────────────────────────────────────────────────
+      - name: Install PostgreSQL 16 client
+        run: |
+          sudo apt-get update -qq
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] \
+            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-16
+
+      # ── Database backup ────────────────────────────────────────────────────────
+      - name: Dump PostgreSQL database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          DB_FILE="db-backup-${{ steps.ts.outputs.TS }}.sql.gz"
+          pg_dump --dbname="$DATABASE_URL" --no-password | gzip > "$DB_FILE"
+          echo "DB_FILE=$DB_FILE" >> "$GITHUB_ENV"
+          echo "Database dump complete. Size: $(du -sh "$DB_FILE" | cut -f1)"
+
+      # ── Storage backup ─────────────────────────────────────────────────────────
+      - name: Sync app storage bucket to local directory
+        run: |
+          mkdir -p storage-backup
+          # --no-progress keeps logs clean; sync exits 0 even for an empty bucket.
+          aws s3 sync "s3://$APP_BUCKET/" ./storage-backup/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --no-progress
+          echo "Files synced: $(find storage-backup -type f | wc -l)"
+
+      - name: Create storage zip archive
+        run: |
+          STORAGE_FILE="storage-backup-${{ steps.ts.outputs.TS }}.zip"
+          zip -r "$STORAGE_FILE" storage-backup/
+          echo "STORAGE_FILE=$STORAGE_FILE" >> "$GITHUB_ENV"
+          echo "Storage archive complete. Size: $(du -sh "$STORAGE_FILE" | cut -f1)"
+
+      # ── Upload to backup bucket ────────────────────────────────────────────────
+      - name: Upload database backup
+        run: |
+          aws s3 cp "$DB_FILE" \
+            "s3://$BACKUP_BUCKET/backups/daily/db/$DB_FILE" \
+            --endpoint-url "$R2_ENDPOINT"
+          echo "Uploaded → backups/daily/db/$DB_FILE"
+
+      - name: Upload storage backup
+        run: |
+          aws s3 cp "$STORAGE_FILE" \
+            "s3://$BACKUP_BUCKET/backups/daily/storage/$STORAGE_FILE" \
+            --endpoint-url "$R2_ENDPOINT"
+          echo "Uploaded → backups/daily/storage/$STORAGE_FILE"
+
+      # ── Retention policy: keep the 7 most recent of each type ─────────────────
+      - name: Prune old database backups (keep latest 7)
+        run: |
+          echo "Checking for old database backups to prune..."
+          # Sort newest-first by filename (names embed the timestamp).
+          # tail -n +8 outputs lines 8 onwards — i.e. everything beyond the 7 newest.
+          OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/daily/db/" \
+            --endpoint-url "$R2_ENDPOINT" \
+            | sort -r \
+            | tail -n +8 \
+            | awk '{print $4}')
+
+          if [ -z "$OLD" ]; then
+            echo "Nothing to prune (fewer than 8 database backups exist)."
+          else
+            for f in $OLD; do
+              echo "Deleting: $f"
+              aws s3 rm "s3://$BACKUP_BUCKET/backups/daily/db/$f" \
+                --endpoint-url "$R2_ENDPOINT"
+            done
+          fi
+
+      - name: Prune old storage backups (keep latest 7)
+        run: |
+          echo "Checking for old storage backups to prune..."
+          OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/daily/storage/" \
+            --endpoint-url "$R2_ENDPOINT" \
+            | sort -r \
+            | tail -n +8 \
+            | awk '{print $4}')
+
+          if [ -z "$OLD" ]; then
+            echo "Nothing to prune (fewer than 8 storage backups exist)."
+          else
+            for f in $OLD; do
+              echo "Deleting: $f"
+              aws s3 rm "s3://$BACKUP_BUCKET/backups/daily/storage/$f" \
+                --endpoint-url "$R2_ENDPOINT"
+            done
+          fi
+
+      # ── Summary ───────────────────────────────────────────────────────────────
+      - name: Backup summary
+        run: |
+          echo "========================================"
+          echo "Backup completed at $(date -u '+%Y-%m-%d %H:%M:%S') UTC"
+          echo "  Database : backups/daily/db/$DB_FILE"
+          echo "  Storage  : backups/daily/storage/$STORAGE_FILE"
+          echo "  Bucket   : $BACKUP_BUCKET"
+          echo "========================================"
