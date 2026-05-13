@@ -1,34 +1,33 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import type { JSX } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import type { JSX, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import Navbar from "./Navbar/Navbar";
 import MobileNavbar from "./Navbar/MobileNavbar";
 import Footer from "./Footer/Footer";
 
 type MainLayoutProps = {
-    theme: "dark" | "light";
-    onToggleTheme: () => void;
+    children: ReactNode;
 };
 
-function MainLayout({ theme, onToggleTheme }: MainLayoutProps): JSX.Element {
+function MainLayout({ children }: MainLayoutProps): JSX.Element {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const location = useLocation();
+    const pathname = usePathname();
 
     useEffect(() => {
         setIsMenuOpen(false);
-    }, [location.pathname]);
+    }, [pathname]);
 
     return (
         <>
             <Navbar
-                theme={theme}
-                onToggleTheme={onToggleTheme}
                 isMenuOpen={isMenuOpen}
                 onToggleMenu={() => setIsMenuOpen((v) => !v)}
             />
             <MobileNavbar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
             <div className="page-wrapper">
-                <Outlet />
+                {children}
             </div>
             <Footer />
         </>

@@ -1,5 +1,8 @@
+"use client";
+
 import type { JSX } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 
 type MobileNavbarProps = {
@@ -9,30 +12,30 @@ type MobileNavbarProps = {
 
 function MobileNavbar({ isOpen, onClose }: MobileNavbarProps): JSX.Element {
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
+    const router = useRouter();
 
     const handleLogout = () => {
         logout();
         onClose();
-        navigate("/");
+        router.push("/");
     };
 
     return (
         <div className={`navbar-mobile-menu${isOpen ? " open" : ""}`} id="mobileMenu">
-            <Link to="/" className="navbar-mobile-link" onClick={onClose}>
+            <Link href="/" className="navbar-mobile-link" onClick={onClose}>
                 Начало
             </Link>
-            <Link to="/about" className="navbar-mobile-link" onClick={onClose}>
+            <Link href="/about" className="navbar-mobile-link" onClick={onClose}>
                 За нас
             </Link>
-            <Link to="/faq" className="navbar-mobile-link" onClick={onClose}>
+            <Link href="/faq" className="navbar-mobile-link" onClick={onClose}>
                 FAQ
             </Link>
-            <Link to="/contact" className="navbar-mobile-link" onClick={onClose}>
+            <Link href="/contact" className="navbar-mobile-link" onClick={onClose}>
                 Контакти
             </Link>
             {user && (
-                <Link to="/dashboard" className="navbar-mobile-link" onClick={onClose}>
+                <Link href="/dashboard" className="navbar-mobile-link" onClick={onClose}>
                     Табло
                 </Link>
             )}
@@ -47,10 +50,10 @@ function MobileNavbar({ isOpen, onClose }: MobileNavbarProps): JSX.Element {
                 </button>
             ) : (
                 <>
-                    <Link to="/login" className="btn-secondary btn-full" style={{ textAlign: "center", marginTop: 16 }} onClick={onClose}>
+                    <Link href="/login" className="btn-secondary btn-full" style={{ textAlign: "center", marginTop: 16 }} onClick={onClose}>
                         Вход
                     </Link>
-                    <Link to="/register" className="btn-primary btn-full" style={{ textAlign: "center", marginTop: 8 }} onClick={onClose}>
+                    <Link href="/register" className="btn-primary btn-full" style={{ textAlign: "center", marginTop: 8 }} onClick={onClose}>
                         Започни безплатно
                     </Link>
                 </>

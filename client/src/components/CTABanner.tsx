@@ -1,5 +1,7 @@
+"use client";
+
 import type { JSX } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 function CTABanner(): JSX.Element {
     return (
@@ -20,10 +22,10 @@ function CTABanner(): JSX.Element {
                         с FitLife. Напълно безплатно за начало.
                     </p>
                     <div className="cta-banner-actions">
-                        <Link to="/register" className="btn-primary btn-lg">
+                        <Link href="/register" className="btn-primary btn-lg">
                             Регистрирай се безплатно
                         </Link>
-                        <Link to="/about" className="btn-secondary btn-lg">
+                        <Link href="/about" className="btn-secondary btn-lg">
                             Научи повече за нас
                         </Link>
                     </div>

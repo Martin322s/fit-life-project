@@ -1,10 +1,12 @@
+"use client";
+
 import type { JSX } from "react";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth, getInitials } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
 type DashboardSidebarProps = {
-    theme: "dark" | "light";
-    onToggleTheme: () => void;
     isOpen?: boolean;
     onClose?: () => void;
 };
@@ -132,6 +134,9 @@ const BOTTOM_NAV: NavItemCfg[] = [
 ];
 
 function SideNavItem({ item, onClick }: { item: NavItemCfg; onClick?: () => void }): JSX.Element {
+    const pathname = usePathname();
+    const isActive = pathname === item.to;
+
     if (item.soon) {
         return (
             <div style={{
@@ -147,11 +152,10 @@ function SideNavItem({ item, onClick }: { item: NavItemCfg; onClick?: () => void
         );
     }
     return (
-        <NavLink
-            to={item.to}
-            end
+        <Link
+            href={item.to}
             onClick={onClick}
-            style={({ isActive }) => ({
+            style={{
                 display: "flex", alignItems: "center", gap: "var(--sp-3)",
                 padding: "10px 14px 10px 18px", borderRadius: "var(--r-md)",
                 fontSize: "0.875rem", fontWeight: 500,
@@ -160,21 +164,22 @@ function SideNavItem({ item, onClick }: { item: NavItemCfg; onClick?: () => void
                 background: isActive ? "rgba(0,102,255,0.1)" : "transparent",
                 borderLeft: isActive ? "2px solid var(--c-electric, #0066FF)" : "2px solid transparent",
                 paddingLeft: isActive ? "16px" : "18px",
-            })}
+            }}
         >
             <span style={{ width: 18, minWidth: 18, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</span>
             <span style={{ minWidth: 0, lineHeight: 1.25 }}>{item.label}</span>
-        </NavLink>
+        </Link>
     );
 }
 
-function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () => {} }: DashboardSidebarProps): JSX.Element {
+function DashboardSidebar({ isOpen = false, onClose = () => {} }: DashboardSidebarProps): JSX.Element {
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
+    const { theme, toggleTheme } = useTheme();
+    const router = useRouter();
 
     const handleLogout = () => {
         logout();
-        navigate("/");
+        router.push("/");
     };
 
     const initials = user ? getInitials(user) : "?";
@@ -192,7 +197,7 @@ function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () =
         >
             {/* Logo + close button row */}
             <div style={{ padding: "var(--sp-5) var(--sp-4)", borderBottom: "1px solid var(--c-border, rgba(255,255,255,0.06))", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Link to="/dashboard" className="navbar-logo" style={{ textDecoration: "none" }} onClick={onClose}>
+                <Link href="/dashboard" className="navbar-logo" style={{ textDecoration: "none" }} onClick={onClose}>
                     <div className="navbar-logo-icon">⚡</div>
                     <span className="navbar-logo-text">Fit<span>Life</span></span>
                 </Link>
@@ -239,7 +244,7 @@ function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () =
                     background: "rgba(255,255,255,0.02)", marginBottom: "var(--sp-2)",
                 }}>
                     <span className="body-sm text-gray">Тема</span>
-                    <button type="button" className="theme-toggle" aria-label="Смени тема" aria-pressed={theme === "light"} onClick={onToggleTheme}>
+                    <button type="button" className="theme-toggle" aria-label="Смени тема" aria-pressed={theme === "light"} onClick={toggleTheme}>
                         <span className="theme-toggle-icon-dark">🌙</span>
                         <span className="theme-toggle-icon-light">☀️</span>
                     </button>
@@ -259,7 +264,7 @@ function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () =
                     <IcLogout /><span>Изход</span>
                 </button>
 
-                {/* User card — real data from auth context */}
+                {/* User card */}
                 <div style={{
                     marginTop: "var(--sp-3)", padding: "var(--sp-3)", borderRadius: "var(--r-md)",
                     background: "rgba(255,255,255,0.03)",

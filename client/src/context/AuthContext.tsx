@@ -1,5 +1,7 @@
+"use client";
+
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import type { JSX } from "react";
+import type { ReactNode } from "react";
 import { authApi, type AuthUser } from "../services/authApi";
 
 type AuthContextType = {
@@ -53,7 +55,7 @@ function clearAuth() {
   sessionStorage.removeItem(AUTH_KEY);
 }
 
-export function AuthProvider({ children }: { children: JSX.Element }): JSX.Element {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

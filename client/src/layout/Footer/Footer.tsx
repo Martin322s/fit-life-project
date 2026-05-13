@@ -1,5 +1,7 @@
+"use client";
+
 import type { JSX } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 function Footer(): JSX.Element {
     return (
@@ -8,7 +10,7 @@ function Footer(): JSX.Element {
                 <div className="footer-grid">
                     <div>
                         <Link
-                            to="/"
+                            href="/"
                             className="navbar-logo"
                             style={{ display: "inline-flex", marginBottom: "var(--space-md)" }}
                         >
@@ -22,7 +24,7 @@ function Footer(): JSX.Element {
                             Проследявай, анализирай, постигай.
                         </p>
                         <div className="footer-social">
-                            <Link to="#" className="footer-social-link" aria-label="Instagram">
+                            <Link href="#" className="footer-social-link" aria-label="Instagram">
                                 <svg
                                     width={16}
                                     height={16}
@@ -36,7 +38,7 @@ function Footer(): JSX.Element {
                                     <circle cx="17.5" cy="6.5" r={1} fill="currentColor" />
                                 </svg>
                             </Link>
-                            <Link to="#" className="footer-social-link" aria-label="Facebook">
+                            <Link href="#" className="footer-social-link" aria-label="Facebook">
                                 <svg
                                     width={16}
                                     height={16}
@@ -48,7 +50,7 @@ function Footer(): JSX.Element {
                                     <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
                                 </svg>
                             </Link>
-                            <Link to="#" className="footer-social-link" aria-label="TikTok">
+                            <Link href="#" className="footer-social-link" aria-label="TikTok">
                                 <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" />
                                 </svg>
@@ -59,17 +61,17 @@ function Footer(): JSX.Element {
                         <div className="footer-col-title">Компания</div>
                         <ul className="footer-links">
                             <li>
-                                <Link to="/about" className="footer-link">
+                                <Link href="/about" className="footer-link">
                                     За нас
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/contact" className="footer-link">
+                                <Link href="/contact" className="footer-link">
                                     Контакти
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/faq" className="footer-link">
+                                <Link href="/faq" className="footer-link">
                                     FAQ
                                 </Link>
                             </li>
@@ -79,17 +81,17 @@ function Footer(): JSX.Element {
                         <div className="footer-col-title">Правно</div>
                         <ul className="footer-links">
                             <li>
-                                <Link to="/privacy" className="footer-link">
+                                <Link href="/privacy" className="footer-link">
                                     Поверителност
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/terms" className="footer-link">
+                                <Link href="/terms" className="footer-link">
                                     Условия за ползване
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/cookies" className="footer-link">
+                                <Link href="/cookies" className="footer-link">
                                     Бисквитки
                                 </Link>
                             </li>
@@ -99,10 +101,10 @@ function Footer(): JSX.Element {
                 <div className="footer-bottom">
                     <p className="footer-copyright">© 2026 FitLife. Всички права запазени.</p>
                     <div className="footer-bottom-links">
-                        <Link to="/privacy" className="footer-bottom-link">
+                        <Link href="/privacy" className="footer-bottom-link">
                             Поверителност
                         </Link>
-                        <Link to="/terms" className="footer-bottom-link">
+                        <Link href="/terms" className="footer-bottom-link">
                             Условия
                         </Link>
                     </div>

@@ -1,22 +1,35 @@
+"use client";
+
 import type { JSX } from "react";
 import Logo from "../Logo/Logo";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
 type NavbarProps = {
-    theme: "dark" | "light";
-    onToggleTheme: () => void;
     isMenuOpen: boolean;
     onToggleMenu: () => void;
 };
 
-function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps): JSX.Element {
+function NavLink({ href, children, end }: { href: string; children: React.ReactNode; end?: boolean }): JSX.Element {
+    const pathname = usePathname();
+    const isActive = end ? pathname === href : pathname.startsWith(href);
+    return (
+        <Link href={href} className={`navbar-link${isActive ? " active" : ""}`}>
+            {children}
+        </Link>
+    );
+}
+
+function Navbar({ isMenuOpen, onToggleMenu }: NavbarProps): JSX.Element {
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
+    const { theme, toggleTheme } = useTheme();
+    const router = useRouter();
 
     const handleLogout = () => {
         logout();
-        navigate("/");
+        router.push("/");
     };
 
     return (
@@ -25,30 +38,20 @@ function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps)
                 <Logo />
                 <ul className="navbar-links">
                     <li>
-                        <NavLink to="/" end className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
-                            Начало
-                        </NavLink>
+                        <NavLink href="/" end>Начало</NavLink>
                     </li>
                     <li>
-                        <NavLink to="/about" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
-                            За нас
-                        </NavLink>
+                        <NavLink href="/about">За нас</NavLink>
                     </li>
                     <li>
-                        <NavLink to="/faq" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
-                            FAQ
-                        </NavLink>
+                        <NavLink href="/faq">FAQ</NavLink>
                     </li>
                     <li>
-                        <NavLink to="/contact" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
-                            Контакти
-                        </NavLink>
+                        <NavLink href="/contact">Контакти</NavLink>
                     </li>
                     {user && (
                         <li>
-                            <NavLink to="/dashboard" className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}>
-                                Табло
-                            </NavLink>
+                            <NavLink href="/dashboard">Табло</NavLink>
                         </li>
                     )}
                 </ul>
@@ -64,10 +67,10 @@ function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps)
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="btn-secondary btn-sm">
+                            <Link href="/login" className="btn-secondary btn-sm">
                                 Вход
                             </Link>
-                            <Link to="/register" className="btn-primary btn-sm">
+                            <Link href="/register" className="btn-primary btn-sm">
                                 Започни безплатно
                             </Link>
                         </>
@@ -77,7 +80,7 @@ function Navbar({ theme, onToggleTheme, isMenuOpen, onToggleMenu }: NavbarProps)
                         type="button"
                         aria-label="Toggle theme"
                         aria-pressed={theme === "light"}
-                        onClick={onToggleTheme}
+                        onClick={toggleTheme}
                     >
                         <span className="theme-toggle-icon-dark">🌙</span>
                         <span className="theme-toggle-icon-light">☀️</span>

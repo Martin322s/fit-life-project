@@ -1,18 +1,26 @@
-import type { JSX } from "react";
-import { Navigate } from "react-router-dom";
+"use client";
+
+import type { JSX, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import LoadingScreen from "./LoadingScreen";
 
-type Props = { children: JSX.Element };
+type Props = { children: ReactNode };
 
-/** Redirects already-authenticated users to /dashboard. */
 function GuestRoute({ children }: Props): JSX.Element {
   const { user, isLoading } = useAuth();
+  const router = useRouter();
 
-  if (isLoading) return <LoadingScreen />;
-  if (user) return <Navigate to="/dashboard" replace />;
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, isLoading, router]);
 
-  return children;
+  if (isLoading || user) return <LoadingScreen />;
+
+  return <>{children}</>;
 }
 
 export default GuestRoute;
