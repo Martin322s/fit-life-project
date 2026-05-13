@@ -21,7 +21,7 @@ export type Profile = {
   proteinTarget: number | null;
   carbsTarget: number | null;
   fatTarget: number | null;
-  avatarDataUrl: string | null;
+  avatarUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -39,7 +39,7 @@ export type UpdateProfileInput = {
   proteinTarget?: number | null;
   carbsTarget?: number | null;
   fatTarget?: number | null;
-  avatarDataUrl?: string | null;
+  avatarUrl?: string | null;
 };
 
 function mapLegacyGoalToGoalType(goal: string | null): GoalType | null {
@@ -92,7 +92,7 @@ export async function getByUserId(userId: string): Promise<Profile | null> {
     proteinTarget: user.proteinTarget,
     carbsTarget: user.carbsTarget,
     fatTarget: user.fatTarget,
-    avatarDataUrl: user.avatarDataUrl ?? null,
+    avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
