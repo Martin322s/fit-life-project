@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { JSX, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar/Navbar";
-import MobileNavbar from "./Navbar/MobileNavbar";
+import MobileNavbar from "./Navbar/MobileNavBar";
 import Footer from "./Footer/Footer";
 
 type MainLayoutProps = {
