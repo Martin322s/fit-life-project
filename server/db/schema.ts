@@ -26,7 +26,7 @@ export const users = pgTable("users", {
   proteinTarget: real("protein_target"),
   carbsTarget: real("carbs_target"),
   fatTarget: real("fat_target"),
-  avatarDataUrl: text("avatar_data_url"),
+  avatarUrl: text("avatar_url"),
   passwordResetTokenHash: text("password_reset_token_hash"),
   passwordResetExpiresAt: timestamp("password_reset_expires_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
