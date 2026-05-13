@@ -6,10 +6,10 @@ type Props = {
     actionLabel: string;
     actionDisabled?: boolean;
     initials: string;
-    avatarDataUrl?: string | null;
+    avatarUrl?: string | null;
 };
 
-export default function ProfileHeader({ onToggleSidebar, onAction, actionLabel, actionDisabled = false, initials, avatarDataUrl }: Props): JSX.Element {
+export default function ProfileHeader({ onToggleSidebar, onAction, actionLabel, actionDisabled = false, initials, avatarUrl }: Props): JSX.Element {
     const today = new Date().toLocaleDateString("bg-BG", {
         weekday: "long",
         day: "numeric",
@@ -40,8 +40,8 @@ export default function ProfileHeader({ onToggleSidebar, onAction, actionLabel, 
                     <span>{actionLabel}</span>
                 </button>
                 <div className="pf-avatar" style={{ overflow: "hidden" }}>
-                    {avatarDataUrl
-                        ? <img src={avatarDataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {avatarUrl
+                        ? <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : initials}
                 </div>
             </div>

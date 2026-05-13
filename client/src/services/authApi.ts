@@ -6,7 +6,7 @@ export type AuthUser = {
   firstName: string;
   lastName: string;
   role: "user" | "admin";
-  avatarDataUrl?: string | null;
+  avatarUrl?: string | null;
   gender?: "male" | "female" | null;
   age?: number | null;
   heightCm?: number | null;
