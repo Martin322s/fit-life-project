@@ -77,7 +77,7 @@ function Products(): JSX.Element {
                                         <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.85rem" }}>{firstProduct ? `${firstProduct.calories} kcal · P ${firstProduct.protein} г · C ${firstProduct.carbs} г · F ${firstProduct.fat} г` : "Разгледай храни и отвори детайли."}</div>
                                     </div>
                                 </div>
-                                <p className="body-sm" style={{ color: "var(--color-cream)", margin: 0, lineHeight: 1.6 }}>{firstProduct?.description ?? "Продуктите тук са хранителна база с калории и макроси. Магазин, количка и поръчки не са част от този таб."}</p>
+                                <p className="body-sm" style={{ color: "var(--color-cream)", margin: 0, lineHeight: 1.6 }}>{firstProduct?.description ?? "Хранителна база с точни стойности на калории, протеин, въглехидрати и мазнини за над 3 000 продукта."}</p>
                                 {firstProduct && (
                                     <div style={{ display: "flex", gap: "var(--sp-2)", flexWrap: "wrap" }}>
                                         <span className="pd-pill" style={{ background: "rgba(0,102,255,0.08)", color: "var(--c-electric,#0066FF)" }}>{productCategoryLabel(firstProduct.category)}</span>
@@ -89,9 +89,9 @@ function Products(): JSX.Element {
                             <div className="card pd-card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
                                 <div>
                                     <div className="label text-gray">Как работи</div>
-                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Хранителна база, не магазин</div>
+                                    <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Хранителна база данни</div>
                                 </div>
-                                <div className="body-sm text-gray">Този таб показва калории, протеин, въглехидрати и мазнини за хранителни продукти. Добавяне към хранения ще бъде отделен следващ етап.</div>
+                                <div className="body-sm text-gray">Търси в базата, за да видиш точни калории и макроси на храни, добавки и напитки. Използвай данните при планиране на хранения и дневен прием.</div>
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
                                     <div style={{ padding: "var(--sp-3)", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,0.025)", border: "1px solid var(--c-border,rgba(255,255,255,0.06))" }}><div className="label text-gray">Резултати</div><div style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, color: "var(--color-cream)" }}>{data.items.length}</div></div>
                                     <div style={{ padding: "var(--sp-3)", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,0.025)", border: "1px solid var(--c-border,rgba(255,255,255,0.06))" }}><div className="label text-gray">Страница</div><div style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, color: "var(--color-cream)" }}>{data.page}</div></div>
