@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Card } from '@/src/components/Card';
+import { Avatar } from '@/src/components/Avatar';
 import { C, R } from '@/src/theme';
 import { useAuth, getInitials, getDisplayName } from '@/src/context/AuthContext';
 
@@ -11,32 +12,32 @@ const MENU_SECTIONS = [
     title: 'Здраве',
     items: [
       { icon: '🏋️', label: 'Тренировъчни програми', desc: 'Намерете план за вашата цел', route: '/training-plans' },
-      { icon: '🥗', label: 'Диети',             desc: 'Разгледайте диетите',        route: '/diets'        },
-      { icon: '🏆', label: 'Предизвикателства',  desc: 'Активни и предстоящи',       route: '/challenges'   },
-      { icon: '📦', label: 'Продукти',           desc: 'База данни с храни',         route: '/products'     },
-      { icon: '🍽️', label: 'Рецепти',            desc: 'Планиране на хранене',       route: '/recipes'      },
+      { icon: '🥗', label: 'Диети',                  desc: 'Разгледайте диетите',        route: '/diets'          },
+      { icon: '🏆', label: 'Предизвикателства',       desc: 'Активни и предстоящи',       route: '/challenges'     },
+      { icon: '📦', label: 'Продукти',                desc: 'База данни с храни',         route: '/products'       },
+      { icon: '🍽️', label: 'Рецепти',                 desc: 'Планиране на хранене',       route: '/recipes'        },
     ],
   },
   {
     title: 'Инструменти',
     items: [
-      { icon: '🧮', label: 'Калкулатори',        desc: 'ИТМ, TDEE, макроси',        route: '/calculators'  },
+      { icon: '🧮', label: 'Калкулатори', desc: 'ИТМ, TDEE, макроси', route: '/calculators' },
     ],
   },
   {
     title: 'Акаунт',
     items: [
-      { icon: '👤', label: 'Профил',             desc: 'Лична информация и цели',    route: '/profile'      },
+      { icon: '👤', label: 'Профил', desc: 'Лична информация и цели', route: '/profile' },
     ],
   },
 ];
 
 export default function More() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const initials = user ? getInitials(user) : '?';
+  const initials    = user ? getInitials(user) : '?';
   const displayName = user ? getDisplayName(user) : '';
 
   const handleLogout = () => {
@@ -64,20 +65,25 @@ export default function More() {
         <Text style={styles.title}>Още</Text>
 
         {/* Profile Card */}
-        <Card style={styles.profileCard}>
-          <View style={styles.profileInner}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{displayName}</Text>
-              <Text style={styles.profileEmail}>{user?.email ?? ''}</Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>⚡ FitLife</Text>
+        <Pressable onPress={() => router.push('/profile')}>
+          <Card style={styles.profileCard}>
+            <View style={styles.profileInner}>
+              <Avatar
+                avatarUrl={profile?.avatarUrl}
+                initials={initials}
+                size={56}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>{displayName}</Text>
+                <Text style={styles.profileEmail}>{user?.email ?? ''}</Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>⚡ FitLife</Text>
+                </View>
               </View>
+              <Text style={styles.profileArrow}>›</Text>
             </View>
-          </View>
-        </Card>
+          </Card>
+        </Pressable>
 
         {/* Menu Sections */}
         {MENU_SECTIONS.map(section => (
@@ -122,11 +128,10 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', color: C.text, marginBottom: 20 },
   profileCard: { marginBottom: 24 },
   profileInner: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.primary + '33', borderWidth: 2, borderColor: C.primary, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 18, fontWeight: '700', color: C.primary },
   profileInfo: { flex: 1 },
   profileName: { fontSize: 17, fontWeight: '700', color: C.text, marginBottom: 2 },
   profileEmail: { fontSize: 13, color: C.muted, marginBottom: 6 },
+  profileArrow: { fontSize: 22, color: C.muted, fontWeight: '300' },
   badge: { alignSelf: 'flex-start', backgroundColor: C.primary + '22', borderRadius: R.full, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: C.primary + '55' },
   badgeText: { fontSize: 11, color: C.primary, fontWeight: '700' },
   section: { marginBottom: 20 },

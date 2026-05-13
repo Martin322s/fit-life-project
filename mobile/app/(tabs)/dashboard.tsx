@@ -4,14 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Card } from '@/src/components/Card';
 import { ProgressBar } from '@/src/components/ProgressBar';
+import { Avatar } from '@/src/components/Avatar';
 import { C, R } from '@/src/theme';
 import { useAuth, getInitials, getDisplayName } from '@/src/context/AuthContext';
 import { mealsApi, isToday, sumCalories, sumMacros, type ApiMeal } from '@/src/services/mealsApi';
 import { progressApi, type ApiProgressEntry } from '@/src/services/progressApi';
-import { profileApi, type ApiProfile } from '@/src/services/profileApi';
 import { hydrationApi } from '@/src/services/hydrationApi';
 
-const DEFAULT_GOAL = 2000;
+const DEFAULT_GOAL   = 2000;
 const DEFAULT_MACROS = { protein: 150, carbs: 200, fat: 65 };
 
 function calcBmi(weightKg: number, heightCm: number) {
@@ -19,12 +19,11 @@ function calcBmi(weightKg: number, heightCm: number) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
 
   const [meals, setMeals]       = useState<ApiMeal[]>([]);
   const [progress, setProgress] = useState<ApiProgressEntry[]>([]);
-  const [profile, setProfile]   = useState<ApiProfile | null>(null);
   const [hydrationMl, setHydrationMl] = useState(0);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,16 +31,14 @@ export default function Dashboard() {
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [m, p, prof, hydration] = await Promise.all([
+      const [m, p, hydration] = await Promise.all([
         mealsApi.list(),
         progressApi.list(),
-        profileApi.get().catch(() => null as { profile: ApiProfile } | null),
         hydrationApi.getToday().catch(() => ({ items: [], totalMl: 0 })),
       ]);
       const uid = user?.id;
       setMeals(uid ? m.items.filter(x => x.userId === uid) : m.items);
       setProgress(uid ? p.items.filter(x => x.userId === uid) : p.items);
-      setProfile(prof?.profile ?? null);
       setHydrationMl(hydration.totalMl);
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
@@ -53,7 +50,8 @@ export default function Dashboard() {
 
   const today = new Date().toLocaleDateString('bg-BG', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const todayMeals = meals.filter(m => isToday(m.createdAt))
+  const todayMeals = meals
+    .filter(m => isToday(m.createdAt))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const todayCalories = sumCalories(todayMeals);
   const todayMacros   = sumMacros(todayMeals);
@@ -98,9 +96,13 @@ export default function Dashboard() {
             <Text style={styles.greeting}>Здравей, {user?.firstName ?? displayName.split(' ')[0]}! 👋</Text>
             <Text style={styles.date}>{today}</Text>
           </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
+          <Pressable onPress={() => router.push('/profile')}>
+            <Avatar
+              avatarUrl={profile?.avatarUrl}
+              initials={initials}
+              size={44}
+            />
+          </Pressable>
         </View>
 
         {/* Quick Stats */}
@@ -120,9 +122,9 @@ export default function Dashboard() {
               <Text style={styles.ringLabel}>от целта</Text>
             </View>
             <View style={styles.ringStats}>
-              <RingStat label="Изядени"   value={`${todayCalories} ккал`} color={C.primary} />
-              <RingStat label="Оставащи"  value={`${remaining} ккал`}     color={C.green} />
-              <RingStat label="Цел"       value={`${goalCalories} ккал`}  color={C.muted} />
+              <RingStat label="Изядени"  value={`${todayCalories} ккал`} color={C.primary} />
+              <RingStat label="Оставащи" value={`${remaining} ккал`}     color={C.green} />
+              <RingStat label="Цел"      value={`${goalCalories} ккал`}  color={C.muted} />
             </View>
           </View>
         </Card>
@@ -177,7 +179,6 @@ export default function Dashboard() {
             </View>
           </Card>
         )}
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -226,8 +227,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   greeting: { fontSize: 20, fontWeight: '700', color: C.text },
   date: { fontSize: 13, color: C.muted, marginTop: 2, textTransform: 'capitalize' },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.primary + '33', borderWidth: 2, borderColor: C.primary, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 14, fontWeight: '700', color: C.primary },
   statsScroll: { marginBottom: 16 },
   ringCard: { marginBottom: 16 },
   ringRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },

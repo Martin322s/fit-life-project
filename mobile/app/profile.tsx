@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { BackHeader } from '@/src/components/BackHeader';
 import { Card } from '@/src/components/Card';
 import { C, R } from '@/src/theme';
+import { useAuth } from '@/src/context/AuthContext';
 import { profileApi, type ApiProfile, type ProfileGoalType, type ProfileActivityLevel } from '@/src/services/profileApi';
 
 const GOALS: { value: ProfileGoalType; label: string }[] = [
@@ -25,6 +26,8 @@ const ACTIVITIES: { value: ProfileActivityLevel; label: string }[] = [
 type Genders = 'male' | 'female';
 
 export default function Profile() {
+  const { setProfile: setContextProfile } = useAuth();
+
   const [profile, setProfile] = useState<ApiProfile | null>(null);
   const [loading, setLoading]         = useState(true);
   const [saving, setSaving]           = useState(false);
@@ -43,22 +46,27 @@ export default function Profile() {
   const [goalType, setGoalType]     = useState<ProfileGoalType | null>(null);
   const [activity, setActivity]     = useState<ProfileActivityLevel | null>(null);
 
+  const applyProfile = useCallback((p: ApiProfile) => {
+    setProfile(p);
+    setContextProfile(p);
+    setFirstName(p.firstName);
+    setLastName(p.lastName);
+    setAge(p.age != null ? String(p.age) : '');
+    setGender((p.gender ?? '') as Genders | '');
+    setHeightCm(p.heightCm != null ? String(p.heightCm) : '');
+    setGoalWeight(p.goalWeight != null ? String(p.goalWeight) : '');
+    setGoalType(p.goalType ?? null);
+    setActivity(p.activityLevel ?? null);
+  }, [setContextProfile]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const { profile: p } = await profileApi.get();
-      setProfile(p);
-      setFirstName(p.firstName);
-      setLastName(p.lastName);
-      setAge(p.age != null ? String(p.age) : '');
-      setGender((p.gender ?? '') as Genders | '');
-      setHeightCm(p.heightCm != null ? String(p.heightCm) : '');
-      setGoalWeight(p.goalWeight != null ? String(p.goalWeight) : '');
-      setGoalType(p.goalType ?? null);
-      setActivity(p.activityLevel ?? null);
+      applyProfile(p);
     } catch {}
     finally { setLoading(false); }
-  }, []);
+  }, [applyProfile]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -71,7 +79,7 @@ export default function Profile() {
     setSaved(false);
     setError('');
     try {
-      await profileApi.update({
+      const { profile: updated } = await profileApi.update({
         firstName: firstName.trim() || undefined,
         lastName:  lastName.trim()  || undefined,
         gender: gender ? (gender as 'male' | 'female') : null,
@@ -81,8 +89,8 @@ export default function Profile() {
         goalType:   goalType   ?? null,
         activityLevel: activity ?? null,
       });
+      applyProfile(updated);
       setSaved(true);
-      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Грешка. Опитайте отново.');
     } finally {
@@ -113,6 +121,7 @@ export default function Profile() {
         asset.mimeType ?? 'image/jpeg',
       );
       setProfile(updated);
+      setContextProfile(updated);
     } catch (err) {
       setAvatarError(err instanceof Error ? err.message : 'Грешка при качване.');
     } finally {
@@ -126,6 +135,7 @@ export default function Profile() {
     try {
       const { profile: updated } = await profileApi.deleteAvatar();
       setProfile(updated);
+      setContextProfile(updated);
     } catch (err) {
       setAvatarError(err instanceof Error ? err.message : 'Грешка при премахване.');
     } finally {
@@ -162,7 +172,13 @@ export default function Profile() {
           <Text style={styles.sectionTitle}>Аватар</Text>
           <View style={styles.avatarRow}>
             {profile?.avatarUrl
-              ? <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+              ? (
+                <Image
+                  key={profile.avatarUrl}
+                  source={{ uri: profile.avatarUrl }}
+                  style={styles.avatar}
+                />
+              )
               : (
                 <View style={[styles.avatar, styles.avatarPlaceholder]}>
                   <Text style={styles.avatarInitials}>{initials}</Text>
@@ -217,7 +233,7 @@ export default function Profile() {
         {/* Personal info */}
         <Card>
           <Text style={styles.sectionTitle}>Лична информация</Text>
-          <Field label="Собствено Иiе" value={firstName} onChangeText={v => { setFirstName(v); setSaved(false); }} placeholder="Иван" />
+          <Field label="Собствено Име" value={firstName} onChangeText={v => { setFirstName(v); setSaved(false); }} placeholder="Иван" />
           <Field label="Фамилия"       value={lastName}  onChangeText={v => { setLastName(v);  setSaved(false); }} placeholder="Петров" />
           <Field label="Възраст"       value={age}       onChangeText={v => { setAge(v);       setSaved(false); }} placeholder="30" keyboardType="numeric" />
 
@@ -309,7 +325,7 @@ const styles = StyleSheet.create({
   avatarCard:         { marginBottom: 16 },
   avatarRow:          { flexDirection: 'row', alignItems: 'center', gap: 16 },
   avatar:             { width: 72, height: 72, borderRadius: 16 },
-  avatarPlaceholder:  { backgroundColor: C.primary + '33', alignItems: 'center', justifyContent: 'center' },
+  avatarPlaceholder:  { backgroundColor: C.primary + '33', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.primary },
   avatarInitials:     { color: C.primary, fontSize: 24, fontWeight: '800' },
   avatarActions:      { flex: 1, gap: 8 },
   avatarBtn:          { borderWidth: 1, borderColor: C.border, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 9, alignItems: 'center' },

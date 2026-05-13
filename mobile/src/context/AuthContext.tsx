@@ -7,11 +7,14 @@ import React, {
 } from 'react';
 import { authApi, type AuthUser, type RegisterInput } from '../services/authApi';
 import { clearToken, getToken, setToken } from '../services/api';
+import { profileApi, type ApiProfile } from '../services/profileApi';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AuthContextType = {
   user: AuthUser | null;
+  /** Full profile including avatarUrl. Loaded after auth; null while loading. */
+  profile: ApiProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -19,6 +22,10 @@ type AuthContextType = {
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<{ devResetUrl?: string }>;
   resetPassword: (token: string, password: string) => Promise<void>;
+  /** Directly overwrite the cached profile (e.g. after avatar upload). */
+  setProfile: (p: ApiProfile | null) => void;
+  /** Re-fetch the profile from the API and update context. */
+  refreshProfile: () => Promise<void>;
 };
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -28,43 +35,60 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser]       = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<ApiProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch profile silently — a missing profile is not fatal.
+  const fetchProfile = useCallback(async (cancelled?: { current: boolean }) => {
+    try {
+      const { profile: p } = await profileApi.get();
+      if (!cancelled?.current) setProfile(p);
+    } catch {
+      // New user may not have a profile record yet.
+    }
+  }, []);
 
   // On mount: restore session from stored token
   useEffect(() => {
-    let cancelled = false;
+    const guard = { current: false };
     getToken()
       .then(async (token) => {
-        if (!token || cancelled) return;
+        if (!token || guard.current) return;
         const { user: u } = await authApi.me();
-        if (!cancelled) setUser(u);
+        if (!guard.current) {
+          setUser(u);
+          fetchProfile(guard);
+        }
       })
       .catch(() => clearToken())
       .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        if (!guard.current) setIsLoading(false);
       });
     return () => {
-      cancelled = true;
+      guard.current = true;
     };
-  }, []);
+  }, [fetchProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
     const { user: u, token } = await authApi.login(email, password);
     await setToken(token);
     setUser(u);
-  }, []);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const register = useCallback(async (data: RegisterInput) => {
     const { user: u, token } = await authApi.register(data);
     await setToken(token);
     setUser(u);
-  }, []);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const logout = useCallback(async () => {
     authApi.logout().catch(() => {});
     await clearToken();
     setUser(null);
+    setProfile(null);
   }, []);
 
   const forgotPassword = useCallback(async (email: string) => {
@@ -76,10 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authApi.resetPassword(token, password);
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    await fetchProfile();
+  }, [fetchProfile]);
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        profile,
         isAuthenticated: user !== null,
         isLoading,
         login,
@@ -87,6 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         forgotPassword,
         resetPassword,
+        setProfile,
+        refreshProfile,
       }}
     >
       {children}
