@@ -144,20 +144,6 @@ export async function PATCH(request: NextRequest) {
       patch.fatTarget = fatTarget;
     }
 
-    if (body.avatarDataUrl !== undefined) {
-      if (body.avatarDataUrl === null || body.avatarDataUrl === "") {
-        patch.avatarDataUrl = null;
-      } else if (typeof body.avatarDataUrl === "string") {
-        if (!body.avatarDataUrl.startsWith("data:image/")) {
-          return NextResponse.json({ message: "Невалиден формат на аватар." }, { status: 400 });
-        }
-        if (body.avatarDataUrl.length > 600_000) {
-          return NextResponse.json({ message: "Аватарът е твърде голям (макс. ~450KB)." }, { status: 400 });
-        }
-        patch.avatarDataUrl = body.avatarDataUrl;
-      }
-    }
-
     const profile = await repo.updateByUserId(auth.payload.sub, patch);
     if (!profile) {
       return NextResponse.json({ message: "Профилът не е намерен." }, { status: 404 });
