@@ -85,6 +85,13 @@
       "when": 1777979369487,
       "tag": "0011_handy_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778543200000,
+      "tag": "0012_r2_avatar_url",
+      "breakpoints": true
     }
   ]
 }
