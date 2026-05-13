@@ -273,8 +273,8 @@ function DashboardSidebar({ theme, onToggleTheme, isOpen = false, onClose = () =
                         fontFamily: "var(--font-display)", fontSize: "0.75rem", fontWeight: 700,
                         color: "var(--c-bg, #080C10)", overflow: "hidden",
                     }}>
-                        {user?.avatarDataUrl
-                            ? <img src={user.avatarDataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        {user?.avatarUrl
+                            ? <img src={user.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             : initials}
                     </div>
                     <div style={{ minWidth: 0 }}>
