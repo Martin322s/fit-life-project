@@ -316,7 +316,7 @@ function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
                         actionLabel={isSaving ? "Запазване..." : "Запази"}
                         actionDisabled={isSaving || isLoading}
                         initials={initials}
-                        avatarDataUrl={profile?.avatarDataUrl ?? user?.avatarDataUrl}
+                        avatarUrl={profile?.avatarUrl ?? user?.avatarUrl}
                     />
                     <div className="pf-content">
                         {error && (
@@ -351,8 +351,8 @@ function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
                             <div className="card pf-card" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
                                 <div className="pf-profile-hero">
                                     <div className="pf-hero-avatar" style={{ overflow: "hidden" }}>
-                                        {profile?.avatarDataUrl
-                                            ? <img src={profile.avatarDataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                        {profile?.avatarUrl
+                                            ? <img src={profile.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                             : initials}
                                     </div>
                                     <div style={{ minWidth: 0 }}>
@@ -489,8 +489,7 @@ function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
                                     <div className="heading-sm" style={{ color: "var(--color-cream)", marginTop: 4 }}>Сигурност и допълнения</div>
                                 </div>
                                 <div className="pf-list">
-                                    <AvatarUploadBox profile={profile} onSaved={async (dataUrl) => {
-                                        await profileApi.update({ avatarDataUrl: dataUrl });
+                                    <AvatarUploadBox profile={profile} onChanged={async () => {
                                         await refresh();
                                         await refreshUser();
                                     }} />
@@ -514,65 +513,73 @@ function Profile({ theme, onToggleTheme }: ProfileProps): JSX.Element {
 
 // ─── AvatarUploadBox ──────────────────────────────────────────────────────────
 
+const AVATAR_ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 function AvatarUploadBox({
     profile,
-    onSaved,
+    onChanged,
 }: {
     profile: ApiProfile | null;
-    onSaved: (dataUrl: string | null) => Promise<void>;
+    onChanged: () => Promise<void>;
 }): JSX.Element {
     const fileRef = useRef<HTMLInputElement>(null);
-    const [preview, setPreview] = useState<string | null>(profile?.avatarDataUrl ?? null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [blobUrl, setBlobUrl] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState("");
     const [ok, setOk] = useState(false);
 
+    // Revoke the object URL when it's replaced or the component unmounts.
     useEffect(() => {
-        setPreview(profile?.avatarDataUrl ?? null);
-    }, [profile?.avatarDataUrl]);
+        return () => {
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+        };
+    }, [blobUrl]);
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         setErr("");
         setOk(false);
-        if (!file.type.startsWith("image/")) {
-            setErr("Само изображения (jpg, png, webp, gif).");
+        if (!AVATAR_ALLOWED.includes(file.type)) {
+            setErr("Само изображения (jpg, jpeg, png, webp).");
             return;
         }
-        if (file.size > 500_000) {
-            setErr("Файлът е твърде голям — максимум 500 KB.");
+        if (file.size > 5_000_000) {
+            setErr("Файлът е твърде голям — максимум 5 MB.");
             return;
         }
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const result = ev.target?.result as string | null;
-            if (result) setPreview(result);
-        };
-        reader.readAsDataURL(file);
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        setSelectedFile(file);
+        setBlobUrl(URL.createObjectURL(file));
     };
 
     const handleSave = async () => {
-        if (!preview || preview === (profile?.avatarDataUrl ?? null)) return;
+        if (!selectedFile) return;
         setSaving(true);
         setErr("");
         try {
-            await onSaved(preview);
+            await profileApi.uploadAvatar(selectedFile);
+            setSelectedFile(null);
+            if (blobUrl) { URL.revokeObjectURL(blobUrl); setBlobUrl(null); }
+            await onChanged();
             setOk(true);
             setTimeout(() => setOk(false), 3000);
         } catch (e) {
-            setErr(e instanceof Error ? e.message : "Грешка при запазване.");
+            setErr(e instanceof Error ? e.message : "Грешка при качване.");
         } finally {
             setSaving(false);
         }
     };
 
     const handleRemove = async () => {
-        setPreview(null);
         setSaving(true);
         setErr("");
         try {
-            await onSaved(null);
+            await profileApi.deleteAvatar();
+            setSelectedFile(null);
+            if (blobUrl) { URL.revokeObjectURL(blobUrl); setBlobUrl(null); }
+            await onChanged();
             setOk(true);
             setTimeout(() => setOk(false), 3000);
         } catch (e) {
@@ -581,6 +588,8 @@ function AvatarUploadBox({
             setSaving(false);
         }
     };
+
+    const displaySrc = blobUrl ?? profile?.avatarUrl ?? null;
 
     return (
         <div className="pf-info-box" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
@@ -592,24 +601,24 @@ function AvatarUploadBox({
                     border: "1px solid rgba(255,255,255,0.08)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                    {preview
-                        ? <img src={preview} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {displaySrc
+                        ? <img src={displaySrc} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : <span style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", fontWeight: 900, color: "var(--color-cream)" }}>
                             {profile ? getInitials({ firstName: profile.firstName, lastName: profile.lastName, id: "", email: "", role: "user" }) : "?"}
                           </span>
                     }
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
-                    <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handleFile} />
                     <button type="button" className="btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
                         📷 Избери снимка
                     </button>
-                    {preview && preview !== (profile?.avatarDataUrl ?? null) && (
+                    {selectedFile && (
                         <button type="button" className="btn-primary btn-sm" disabled={saving} onClick={handleSave}>
-                            {saving ? "Запазване…" : "Запази аватара"}
+                            {saving ? "Качване…" : "Запази аватара"}
                         </button>
                     )}
-                    {preview && preview === (profile?.avatarDataUrl ?? null) && (
+                    {!selectedFile && profile?.avatarUrl && (
                         <button type="button" className="btn-ghost btn-sm" disabled={saving} onClick={handleRemove}
                             style={{ color: "var(--c-error,#FF3D57)", borderColor: "rgba(255,61,87,0.25)" }}>
                             Премахни аватара
@@ -619,7 +628,7 @@ function AvatarUploadBox({
             </div>
             {err && <div className="pf-error-box"><span className="body-sm" style={{ color: "var(--c-error,#FF3D57)" }}>{err}</span></div>}
             {ok  && <div className="pf-success-box"><span className="body-sm" style={{ color: "#00E676" }}>✓ Аватарът е запазен.</span></div>}
-            <div className="label text-gray">Макс. 500 KB · jpg, png, webp, gif</div>
+            <div className="label text-gray">Макс. 5 MB · jpg, jpeg, png, webp</div>
         </div>
     );
 }

@@ -450,8 +450,8 @@ function DashHeader({
         </div>
         <button type="button" className="btn-primary btn-sm dash-header-logbtn" onClick={onLogWeight}>+ Запиши тегло</button>
         <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: "linear-gradient(135deg,var(--c-electric,#0066FF),var(--c-acid,#C8FF00))", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: "0.8rem", fontWeight: 700, color: "var(--c-bg,#080C10)", overflow: "hidden" }}>
-          {user?.avatarDataUrl
-            ? <img src={user.avatarDataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {user?.avatarUrl
+            ? <img src={user.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : initials}
         </div>
       </div>
