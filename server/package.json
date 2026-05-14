@@ -18,6 +18,7 @@
     "db:seed:products": "tsx db/seed-products.ts",
     "db:seed:catalog-load": "tsx db/seed-catalog-load.ts",
     "db:seed:challenges": "tsx db/seed-challenges.ts",
+    "db:seed:full": "npm run db:seed && npm run db:seed:recipes && npm run db:seed:diets && npm run db:seed:training-plans && npm run db:seed:products && npm run db:seed:challenges && npm run db:seed:catalog-load",
     "backup:db": "node scripts/backups/backup-db.js",
     "backup:clean": "node scripts/backups/clean-backups.js"
   },
