@@ -1,27 +1,139 @@
-# AGENTS.md — fit-life-project
+# AGENTS.md - fit-life-project
 
-AI agent instructions for the fit-life-project codebase. Read this before generating any code.
+AI agent instructions for the fit-life-project codebase. Read this before generating code.
 
 ---
 
 ## App Context
 
-**Fit Life** is a full-stack fitness tracking application targeted at Bulgarian-speaking users. The UI language is **Bulgarian** throughout — all visible text, labels, and copy must be in Bulgarian. Code (variable names, function names, comments) is written in English.
+**Fit Life** is a full-stack fitness and nutrition tracking application for Bulgarian-speaking users. The UI language is **Bulgarian** throughout: all visible text, labels, validation messages, and page copy must be in Bulgarian. Code identifiers, file names, and comments are written in English.
 
-Core features: calorie tracking, weight logging, workout plans, recipes, diet guides, challenges, nutrition products, shop, calculators, and user profile management.
+Core features include authentication, calorie and meal tracking, hydration, weight/progress logging, workouts, goals, recipes, diet guides, training plans, challenges, nutrition products, calculators, profile management, contact messages, password reset, and admin management.
 
 ---
 
 ## Repository Structure
 
-```
+```text
 fit-life-project/
-├── mobile/      # React Native app (Expo) — primary active codebase
-├── client/      # Web frontend (React + Vite)
-└── server/      # Backend API (placeholder — not yet implemented)
++-- client/   Web frontend - Next.js 15 + React 19
++-- server/   Backend API - Next.js 16 route handlers + PostgreSQL + Drizzle
++-- mobile/   Mobile app - Expo 54 + React Native 0.81
 ```
 
-Work is happening primarily in `mobile/`. The `server/` directory is empty; do not generate backend code unless explicitly requested.
+All three apps are active. Do not assume `server/` is empty or that work is mobile-only. Before editing, inspect the relevant app and follow its existing patterns.
+
+---
+
+## Web Client (`client/`)
+
+### Framework & Runtime
+
+| Concern | Technology |
+|---|---|
+| Framework | Next.js 15 App Router |
+| UI | React 19 |
+| Language | TypeScript 5.9 |
+| Styling | Existing CSS files/public stylesheet; Tailwind CSS 4 is installed as a dependency |
+| Deployment | Netlify with `@netlify/plugin-nextjs` |
+| API config | `src/services/apiConfig.ts` and `NEXT_PUBLIC_API_BASE_URL` |
+
+### Directory Layout
+
+```text
+client/
++-- src/
+|   +-- app/          Next.js App Router route folders and `page.tsx` wrappers
+|   +-- views/        Feature view implementations and section components
+|   +-- layout/       MainLayout, DashboardLayout, Navbar, Footer, Logo
+|   +-- components/   Shared UI and route guards
+|   +-- context/      AuthContext and ThemeContext
+|   +-- hooks/        Feature data hooks and local storage hook
+|   +-- services/     API client modules
+|   +-- lib/          Utility helpers, calculators, label maps
+|   +-- assets/       Imported client assets
++-- public/           Public assets and global stylesheet
++-- next.config.ts
++-- netlify.toml
+```
+
+### Client Conventions
+
+- Routes live under `src/app/<route>/page.tsx`.
+- Keep route files thin when possible; put feature UI in `src/views/<Feature>/`.
+- Use existing service modules in `src/services/` for API calls.
+- Use existing feature hooks in `src/hooks/` before creating new data-fetching logic.
+- Use `MainLayout`, `DashboardLayout`, and existing route guards instead of inlining layout/auth logic.
+- The app uses `AuthContext` and `ThemeContext`; do not add Redux, Zustand, MobX, or another global state library unless explicitly requested.
+- Tailwind is installed, but do not rewrite existing CSS to Tailwind unless the task specifically asks for it.
+
+### Client Scripts
+
+```powershell
+cd client
+npm install
+npm run dev      # http://localhost:3000
+npm run build
+npm run start
+```
+
+---
+
+## Server API (`server/`)
+
+### Framework & Runtime
+
+| Concern | Technology |
+|---|---|
+| Framework | Next.js 16 App Router route handlers |
+| Language | TypeScript |
+| Database | PostgreSQL / Neon |
+| ORM | Drizzle ORM |
+| Auth | JWT + bcryptjs |
+| Email | EmailJS for contact and password reset flows |
+| Local port | `3001` via `npm run dev` |
+
+### Directory Layout
+
+```text
+server/
++-- app/api/          REST endpoints
++-- db/schema.ts      Drizzle schema
++-- db/seed*.ts       Seed scripts
++-- drizzle/          Generated migrations
++-- lib/              Auth, repositories, validation, storage helpers
++-- middleware.ts     CORS / origin-whitelist only (not JWT)
++-- scripts/backups/  Database backup scripts
+```
+
+### Server Conventions
+
+- API routes live in `app/api/**/route.ts`.
+- Keep database access in repository/helper modules under `lib/` where that pattern already exists.
+- Update `db/schema.ts` for schema changes and generate migrations with Drizzle when required.
+- Use existing auth helpers:
+  - `lib/jwt.ts` — token signing and verification.
+  - `lib/require-auth.ts` — `requireAuth()` extracts and validates the JWT Bearer
+    token from the `Authorization` header; returns a typed payload or a 401/403
+    response. Use this in every protected route handler.
+  - `lib/auth.ts` — higher-level login/register/forgot-password business logic.
+  - `middleware.ts` handles **CORS / origin whitelist only** — it does not validate
+    JWT tokens. Do not rely on it for authorization.
+- Admin endpoints must enforce the admin role via `requireAuth()` + role check.
+- Do not bypass validation helpers when a feature already has validation modules.
+- Never commit real secrets. Use `.env.example` for documented variable names only.
+
+### Server Scripts
+
+```powershell
+cd server
+npm install
+npm run dev          # http://localhost:3001
+npm run build
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
 
 ---
 
@@ -31,105 +143,54 @@ Work is happening primarily in `mobile/`. The `server/` directory is empty; do n
 
 | Concern | Technology |
 |---|---|
-| Framework | Expo ~54 / React Native 0.81 |
-| Language | TypeScript ~5.9 (strict) |
-| Routing | Expo Router ~6 (file-based, Next.js-style) |
-| Persistence | `@react-native-async-storage/async-storage` ~2.2 |
+| Framework | Expo 54 / React Native 0.81 |
+| Language | TypeScript 5.9 |
+| Routing | Expo Router 6 |
+| Persistence | AsyncStorage |
 | Styling | React Native `StyleSheet.create()` + centralized theme tokens |
-
-No Redux, Zustand, Context API, or external state management library. State is local (`useState`) or persisted via the `useStorage` hook.
+| API config | `src/config/app.config.ts` |
 
 ### Directory Layout
 
-```
+```text
 mobile/
-├── app/                     # Expo Router pages (file = route)
-│   ├── _layout.tsx          # Root layout
-│   ├── index.tsx            # Splash / redirect guard
-│   ├── (auth)/              # Route group: login, register, forgot-password
-│   └── (tabs)/              # Route group: dashboard, calories, weight, training, more
-├── src/
-│   ├── components/          # Shared UI primitives
-│   ├── data/                # Hardcoded mock data (no API yet)
-│   ├── hooks/               # Custom React hooks
-│   ├── services/            # Platform service wrappers (AsyncStorage)
-│   ├── types/               # Shared TypeScript interfaces
-│   └── theme.ts             # Design tokens (colors C, radii R)
-└── assets/images/           # Icons, splash screens
++-- app/                     Expo Router pages and route groups
+|   +-- (auth)/              login, register, forgot-password, reset-password
+|   +-- (tabs)/              dashboard, calories, weight, training, more
+|   +-- _layout.tsx          Root layout
+|   +-- index.tsx            Splash/redirect guard
++-- src/
+|   +-- components/          Shared React Native UI primitives
+|   +-- config/              App/API configuration
+|   +-- context/             AuthContext
+|   +-- data/                Local/static data where still used
+|   +-- hooks/               Custom hooks
+|   +-- services/            API and platform service wrappers
+|   +-- types/               Shared TypeScript interfaces
+|   +-- theme.ts             Design tokens (`C`, `R`)
++-- assets/images/           Icons and splash assets
 ```
 
-### Routing Conventions (Expo Router)
+### Mobile Conventions
 
-- Route files live directly under `app/`. Filename = URL segment.
-- Use parenthesised folders for layout groups: `(auth)/`, `(tabs)/`.
-- Each group has a `_layout.tsx` that defines its navigator (Stack or Tabs).
-- New top-level pages go at `app/<page>.tsx`.
-- Nested routes are rare; prefer flat structure.
-
-### Styling
-
-- **Never** use external styling libraries (no NativeWind, no Styled Components).
-- All styles use `StyleSheet.create()` at the bottom of each file.
+- Route files live under `mobile/app/`; use Expo Router group folders like `(auth)` and `(tabs)`.
+- Use `StyleSheet.create()` for styles.
 - Import design tokens from `src/theme.ts`:
-  - `C` — color palette (`C.bg`, `C.card`, `C.primary`, `C.green`, `C.red`, `C.amber`, `C.purple`, `C.cyan`, `C.text`, `C.muted`, `C.border`)
-  - `R` — border radii (`R.sm`, `R.md`, `R.lg`, `R.xl`, `R.full`)
-- The app uses a **dark theme only** — no light mode.
-- Do not hardcode hex colors or numeric radii inline; always reference `C` and `R`.
+  - `C` for colors.
+  - `R` for border radii.
+- Do not add NativeWind, Styled Components, Tailwind, or another styling library to the mobile app unless explicitly requested.
+- Use existing primitives in `src/components/` before creating new shared components.
+- Keep props type aliases named `Props` in component files and destructure props in the function signature.
+- Put shared interfaces in `src/types/index.ts`.
 
-### Component Guidelines
+### Mobile Scripts
 
-- One component per file.
-- Props type is named `Props` and defined as a local `type Props = { ... }`.
-- Destructure props in the function signature.
-- Reusable primitives live in `src/components/`: `Card`, `StatCard`, `ProgressBar`, `ScreenHeader`, `BackHeader`.
-- Use existing primitives before creating new ones.
-
-### Data & State
-
-- All data is currently mock/hardcoded in `src/data/*.ts`. Do not move data to a different location unless adding real API calls.
-- For persistent state, use the `useStorage<T>(key, initialValue)` hook from `src/hooks/useStorage.ts`. It returns `{ value, set, loaded }`.
-- Storage keys are defined in `src/services/storage.ts` under the `KEYS` constant (`AUTH`, `PROFILE`, `WEIGHT_LOG`, `FOOD_LOG`). Add new keys there.
-- When adding a new data entity, define its TypeScript interface in `src/types/index.ts`.
-
-### TypeScript
-
-- Strict mode is enabled — no `any`, no implicit `any`.
-- All shared interfaces go in `src/types/index.ts`.
-- Use `type` for simple shapes; `interface` when extension is expected.
-
----
-
-## Web App (`client/`)
-
-### Framework & Runtime
-
-| Concern | Technology |
-|---|---|
-| Framework | React 19 |
-| Build tool | Vite 8 |
-| Routing | React Router DOM 7 |
-| Language | TypeScript ~5.9 |
-| Theme | localStorage-based dark/light attribute on `document.documentElement` |
-
-### Directory Layout
-
+```powershell
+cd mobile
+npm install
+npm run start
+npm run typecheck
 ```
-client/src/
-├── App.tsx              # Route definitions
-├── components/          # Shared UI components
-├── hooks/               # e.g. useLocalStorageState
-├── layout/              # MainLayout, Navbar, Footer, DashboardLayout
-└── pages/               # One folder per route feature
-    ├── Home/
-    ├── Dashboard/
-    ├── Calories/
-    ├── Weight/
-    ├── Training/
-    └── ...              # (16+ feature pages)
-```
-
-- Each page folder contains its own component and sub-section components.
-- Layout wrappers are in `layout/`; never inline layout logic in page components.
 
 ---
 
@@ -138,31 +199,40 @@ client/src/
 | Artifact | Convention | Example |
 |---|---|---|
 | React components | PascalCase | `StatCard.tsx`, `ProgressBar.tsx` |
-| Hooks | camelCase prefixed `use` | `useStorage.ts` |
-| Utilities / services | camelCase | `storage.ts`, `dashboardData.ts` |
-| Route files (Expo Router) | kebab-case | `forgot-password.tsx` |
-| Route group folders | lowercase with parens | `(auth)/`, `(tabs)/` |
-| Constants | SCREAMING_SNAKE_CASE | `KEYS.AUTH` |
-| TypeScript types/interfaces | PascalCase | `UserProfile`, `WeightEntry` |
-| Props type | `Props` (local alias) | `type Props = { ... }` |
+| Hooks | camelCase prefixed with `use` | `useDashboardData.ts` |
+| Utilities/services | camelCase | `apiConfig.ts`, `recipeLabels.ts` |
+| Next route folders | kebab-case | `forgot-password/page.tsx` |
+| Expo route files | kebab-case | `training-plans.tsx` |
+| Expo route groups | lowercase with parentheses | `(auth)`, `(tabs)` |
+| Constants | SCREAMING_SNAKE_CASE | `API_BASE_URL` |
+| Types/interfaces | PascalCase | `UserProfile`, `WeightEntry` |
+| Local props alias | `Props` | `type Props = { ... }` |
 
 ---
 
 ## Language & Copy
 
-- All user-facing strings are in **Bulgarian**.
-- Code identifiers, comments, and file names are in **English**.
-- Do not mix languages within the same layer (no Bulgarian variable names, no English UI text).
+- All user-facing strings must be in **Bulgarian**.
+- Code identifiers, comments, and file names must be in English.
+- Do not introduce English UI copy.
+- Keep Bulgarian copy natural and consistent with the existing tone.
 
 ---
 
-## What Not To Do
+## Dependency Rules
 
-- Do not install new dependencies without flagging it — justify any addition.
-- Do not add Redux, Zustand, MobX, or any global state library unless explicitly requested.
-- Do not use NativeWind, Tailwind, or any CSS-in-JS library in the mobile app.
-- Do not hardcode colors or spacing values; use `C` and `R` from `theme.ts`.
-- Do not create a backend implementation in `server/` unless explicitly asked.
-- Do not generate English UI text.
-- Do not generate `any` types.
-- Do not create new shared components if an existing one in `src/components/` already covers the use case.
+- Do not install new dependencies without flagging and justifying the addition.
+- Prefer existing libraries and local helpers before adding packages.
+- Tailwind CSS is already installed in the web client, but not in the mobile app.
+- Do not add global state libraries unless explicitly requested.
+
+---
+
+## Safety Rules
+
+- Do not generate backend code in a different stack; the backend is already implemented in `server/`.
+- Do not hardcode secrets, API keys, JWT secrets, database URLs, or email credentials.
+- Do not revert unrelated user changes.
+- Do not use `any` types unless there is no reasonable typed alternative and the choice is explained.
+- Keep changes scoped to the requested app/module.
+- When changing API contracts, update both the relevant server endpoint and affected client/mobile service types.

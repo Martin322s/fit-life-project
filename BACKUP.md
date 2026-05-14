@@ -145,7 +145,31 @@ aws s3 cp restored-storage/avatars/abc123.jpg \
 
 ## Retention policy
 
-The workflow keeps the **7 most recent** backups of each type and automatically deletes the rest after every run. Backups are named with timestamps, so "most recent" is determined by lexicographic sort (which matches chronological order for `YYYY-MM-DD-HH-mm` filenames).
+Three tiers are maintained in separate R2 prefixes:
+
+| Tier | Frequency | Kept | Pruned on |
+|---|---|---|---|
+| Daily | Every day at 03:00 UTC | 7 most recent | Every run |
+| Weekly | Every Sunday | 5 most recent | Every Sunday run |
+| Monthly | 1st of each month | 12 most recent | 1st of month run |
+
+Backups are named with timestamps, so "most recent" is determined by lexicographic
+sort (which matches chronological order for `YYYY-MM-DD-HH-mm` filenames).
+
+R2 prefix layout:
+
+```
+backups/
+  daily/
+    db/        ← 7 most recent daily DB dumps
+    storage/   ← 7 most recent daily storage zips
+  weekly/
+    db/        ← 5 most recent Sunday DB dumps
+    storage/   ← 5 most recent Sunday storage zips
+  monthly/
+    db/        ← 12 most recent 1st-of-month DB dumps
+    storage/   ← 12 most recent 1st-of-month storage zips
+```
 
 ---
 

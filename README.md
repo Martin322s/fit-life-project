@@ -7,7 +7,7 @@ The project contains a web app, a mobile app, and an API server backed by a Post
 ```
 fit-life-project/
 +-- server/   API - Next.js + PostgreSQL + Drizzle ORM
-+-- client/   Web app - React + Vite
++-- client/   Web app - Next.js + React
 +-- mobile/   Mobile app - Expo + React Native
 ```
 
@@ -29,7 +29,7 @@ All visible application text is intended to be in Bulgarian.
 
 ```mermaid
 flowchart LR
-  User[User] --> Web[Web Client<br/>React + Vite]
+  User[User] --> Web[Web Client<br/>Next.js + React]
   User --> Mobile[Mobile App<br/>Expo + React Native]
   Web --> API[API Server<br/>Next.js Route Handlers]
   Mobile --> API
@@ -40,7 +40,7 @@ flowchart LR
 
 ### Front End
 
-The web client lives in `client/` and is built with React 19, TypeScript, Vite, and React Router DOM. It contains public pages, authenticated dashboard pages, admin-only pages, API service wrappers, reusable hooks, and shared layout components.
+The web client lives in `client/` and is built with Next.js 15, React 19, TypeScript, and the Next.js App Router. It contains public pages, authenticated dashboard pages, admin-only pages, API service wrappers, reusable hooks, shared layout components, and Tailwind CSS installed as a dependency.
 
 ### Mobile App
 
@@ -204,13 +204,14 @@ fit-life-project/
 +-- DEPLOYMENT.md             Deployment notes
 +-- mobile-app-qr.svg         QR code for Android APK download
 +-- client/                   Web frontend
-|   +-- src/App.tsx           Web route definitions
-|   +-- src/pages/            Page-level features
+|   +-- src/app/              Next.js App Router route folders
+|   +-- src/views/            Feature view implementations
 |   +-- src/layout/           Shared layout components
 |   +-- src/components/       Shared route guards and UI components
 |   +-- src/context/          Authentication context
 |   +-- src/hooks/            Data and local state hooks
 |   +-- src/services/         API clients for backend endpoints
+|   +-- public/               Static public assets and global CSS
 +-- mobile/                   Expo mobile app
 |   +-- app/                  Expo Router screens and route groups
 |   +-- src/components/       Shared React Native UI primitives
@@ -286,7 +287,18 @@ copy .env.example .env
 npm run dev
 ```
 
-Runs on `http://localhost:5173`
+Runs on `http://localhost:3000` by default.
+
+### Test Accounts
+
+Use these accounts when testing authentication flows:
+
+| Role | Email | Password |
+|---|---|---|
+| User | `user@fitlife.bg` | `password123` |
+| Admin | `admin@fitlife.bg` | `admin1234` |
+
+The "Forgot Password" functionality works with real email delivery. To test it properly, register with or use an existing email address that you can access, then open the password reset link from that inbox.
 
 ### 3. Mobile App
 
@@ -302,9 +314,72 @@ The app connects to the local API during development and to the production API i
 
 ---
 
+## Scalability & Performance
+
+### Server-side pagination
+
+Every catalog endpoint (`/api/recipes`, `/api/products`, `/api/training-plans`,
+`/api/diets`, `/api/challenges`) supports `?page=` and `?limit=` query parameters.
+Responses include `{ items, page, limit, total, totalPages }` so clients can
+implement infinite scroll or numbered pages without loading the full dataset.
+
+### 10,000-row catalog seed
+
+The script `db/seed-catalog-load.ts` seeds at least **10,000 rows** into
+`recipes`, `products`, and `training_plans` by generating variations from a curated
+base dataset. This provides realistic pagination, search, and index performance
+for evaluation and load testing.
+
+Run it with:
+
+```powershell
+cd server
+npm run db:seed:catalog-load
+```
+
+Or use the combined command that runs all seeds in order:
+
+```powershell
+npm run db:seed:full
+```
+
+### Database indexes
+
+Migration `0013_catalog_performance_indexes` adds:
+
+| Table | Index type | Columns |
+|---|---|---|
+| `recipes` | B-tree | `(category, difficulty)`, `created_at DESC` |
+| `training_plans` | B-tree | `(goal_type, level)`, `level`, `created_at DESC` |
+| `products` | B-tree | `(category, created_at DESC)`, `(category, protein DESC)` |
+| `recipes` | GIN / trgm | `title`, `description` — full-text search |
+| `products` | GIN / trgm | `name`, `description`, `brand` — full-text search |
+| `training_plans` | GIN / trgm | `title`, `description` — full-text search |
+
+GIN / trgm indexes require the `pg_trgm` extension (enabled by default on Neon).
+
+### Drizzle ORM repositories
+
+All database access goes through typed repository modules in `server/lib/repositories/`.
+Each repository uses Drizzle's query builder, keeping SQL generation structured and
+preventing raw-string injection vulnerabilities.
+
+### Neon serverless PostgreSQL
+
+The backend targets [Neon](https://neon.tech/), a serverless PostgreSQL provider.
+Neon scales compute to zero when idle and scales out automatically under load,
+which aligns with the serverless deployment model on Netlify.
+
+### Cloudflare R2 object storage
+
+User avatar images are stored in a Cloudflare R2 bucket, keeping binary assets
+out of the database and off the application server. R2 serves files via a public CDN URL.
+
+---
+
 ## Hosted
 
-- Web: https://fitlife-bg.netlify.app
+- Web: https://fitlife-com.netlify.app/
 - Android APK: https://expo.dev/accounts/martin13s18/projects/fit-life/builds/4d49c3a1-48dd-484b-bded-2e005690cbb3
 
 ## Download the Mobile App

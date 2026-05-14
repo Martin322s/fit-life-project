@@ -1,41 +1,48 @@
-# FitLife — Web Client
+# FitLife - Web Client
 
-React 19 + TypeScript + Vite single-page application. Talks to the FitLife server API and is the primary surface for the web experience including the admin panel.
+Next.js 15 + React 19 + TypeScript web application for the Fit Life platform. It talks to the Fit Life API and includes the public website, authenticated user area, password reset flow, and admin panel.
 
 ## Tech Stack
 
-- **React 19** with React Compiler enabled
+- **Next.js 15** with the App Router
+- **React 19**
 - **TypeScript 5.9**
-- **Vite 8** (build tool, dev server)
-- **React Router 7** (client-side routing)
-- **ESLint 9** with TypeScript + React Hooks plugins
+- **Tailwind CSS 4**
+- **ESLint 9** with Next.js config
+- **Netlify Next.js plugin** for deployment
 
 ## Project Structure
 
-```
+```text
 client/
-├── src/
-│   ├── components/     # Shared route guards (AdminRoute, GuestRoute, PrivateRoute)
-│   ├── context/        # AuthContext — global auth state
-│   ├── hooks/          # Data-fetching hooks per feature
-│   ├── layout/         # Navbar, Footer, Sidebar, MainLayout
-│   ├── lib/            # Utility helpers (calculators, label maps)
-│   └── pages/          # Feature pages (Dashboard, Calories, Weight, Recipes, …)
-├── public/             # Static assets
-├── index.html
-├── vite.config.ts
-└── .env                # VITE_API_BASE_URL
++-- src/
+|   +-- app/             Next.js App Router route folders and page wrappers
+|   +-- assets/          Client-side static/imported assets
+|   +-- components/      Shared route guards and reusable UI components
+|   +-- context/         AuthContext and ThemeContext providers
+|   +-- hooks/           Data-fetching and local state hooks per feature
+|   +-- layout/          MainLayout, dashboard layout, navbar, footer, logo
+|   +-- lib/             Utility helpers, calculators, and label maps
+|   +-- services/        API clients and API base URL configuration
+|   +-- views/           Feature view implementations and section components
++-- public/              Static public assets and global CSS file
++-- next.config.ts       Next.js configuration
++-- netlify.toml         Netlify build/deploy configuration
++-- package.json         Scripts and dependencies
++-- .env                 NEXT_PUBLIC_API_BASE_URL
 ```
+
+Routes are defined by folders in `src/app/`. Most route files are thin wrappers that render feature implementations from `src/views/`, keeping routing concerns separate from page UI.
 
 ## Environment Variables
 
-Create `client/.env` (copy from `client/.env.example`):
+Create `client/.env` from `client/.env.example`:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
-For production point this to the deployed server URL.
+For production, point this to the deployed API server URL.
 
 ## Setup & Development
 
@@ -44,37 +51,43 @@ npm install
 npm run dev
 ```
 
-App runs at http://localhost:5173.
+The app runs at http://localhost:3000 by default.
 
 ## Available Scripts
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start Vite dev server with HMR |
-| `npm run build` | Type-check and produce production bundle in `dist/` |
-| `npm run preview` | Serve the production build locally |
-| `npm run lint` | Run ESLint |
+| `npm run dev` | Start the Next.js development server |
+| `npm run build` | Create a production Next.js build |
+| `npm run start` | Serve the production build locally |
+| `npm run lint` | Run the configured Next.js lint command |
 
-## Production Build
+## Test Accounts
 
-```bash
-npm run build
-```
+Use these accounts when testing authentication flows:
 
-The output is in `dist/`. Deploy `dist/` to any static host.
+| Role | Email | Password |
+|---|---|---|
+| User | `peter@abv.bg` | `asd123asd` |
+| Admin | `admin@fitlife.bg` | `admin1234` |
 
-For Netlify, `public/_redirects` already contains `/* /index.html 200` for SPA routing. For Vercel or other hosts, configure an equivalent fallback rewrite to `/index.html`.
+The "Forgot Password" functionality works with real email delivery. To test it properly, register with or use an existing email address that you can access, then open the password reset link from that inbox.
 
 ## Route Overview
 
 | Path | Access | Description |
 |---|---|---|
-| `/` | Public | Landing / home |
-| `/login` `/register` | Guest only | Auth pages |
+| `/` | Public | Home page |
+| `/about` | Public | About page |
+| `/contact` | Public | Contact page |
+| `/faq` | Public | Frequently asked questions |
+| `/privacy` `/terms` `/cookies` | Public | Legal pages |
+| `/login` `/register` | Guest only | Authentication pages |
 | `/forgot-password` | Guest only | Password reset request |
+| `/reset-password` | Guest only | Password reset completion |
 | `/dashboard` | Auth | Main dashboard |
-| `/calories` | Auth | Meal & calorie tracking |
-| `/weight` | Auth | Weight / progress tracking |
+| `/calories` | Auth | Meal and calorie tracking |
+| `/weight` | Auth | Weight and progress tracking |
 | `/recipes` | Auth | Recipe browser |
 | `/diets` | Auth | Diet plans |
 | `/training-plans` | Auth | Training plan browser |
@@ -82,4 +95,13 @@ For Netlify, `public/_redirects` already contains `/* /index.html 200` for SPA r
 | `/challenges` | Auth | Fitness challenges |
 | `/calculators` | Auth | BMI, TDEE, and other calculators |
 | `/profile` | Auth | User profile |
-| `/admin` | Admin only | User & stat management |
+| `/admin` | Admin only | User and statistics management |
+
+## Production Build
+
+```bash
+npm run build
+npm run start
+```
+
+Netlify deployment is configured through `netlify.toml` and `@netlify/plugin-nextjs`.
