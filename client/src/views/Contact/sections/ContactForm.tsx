@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import Link from "next/link";
-import { sendContactMessage } from "../../../services/contactApi";
+import { sendContactAction } from "../../../app/contact/actions";
 
 type FormData = {
     firstName: string;
@@ -49,10 +49,10 @@ function ContactForm(): JSX.Element {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitStatus("submitting");
-        try {
-            await sendContactMessage(formData);
+        const result = await sendContactAction(formData);
+        if (result.success) {
             setSubmitStatus("success");
-        } catch {
+        } else {
             setSubmitStatus("error");
         }
     };
