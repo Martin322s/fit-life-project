@@ -92,6 +92,13 @@
       "when": 1778543200000,
       "tag": "0012_r2_avatar_url",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1747180800000,
+      "tag": "0013_catalog_performance_indexes",
+      "breakpoints": true
     }
   ]
 }
