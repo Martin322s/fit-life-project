@@ -3,11 +3,10 @@
 import { useState } from "react";
 import type { JSX } from "react";
 import Link from "next/link";
-import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
+import { forgotPasswordAction } from "../../../app/forgot-password/actions";
 
 function ForgotPasswordForm(): JSX.Element {
-    const { forgotPassword } = useAuth();
     const { theme, toggleTheme: onToggleTheme } = useTheme();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -18,13 +17,12 @@ function ForgotPasswordForm(): JSX.Element {
         e.preventDefault();
         setError(null);
         setIsLoading(true);
-        try {
-            await forgotPassword(email.trim());
+        const result = await forgotPasswordAction(email);
+        setIsLoading(false);
+        if (result.success) {
             setSubmitted(true);
-        } catch {
-            setError("Нещо се обърка. Моля, опитай отново.");
-        } finally {
-            setIsLoading(false);
+        } else {
+            setError(result.message);
         }
     };
     return (
