@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, real, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, real, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -122,7 +122,10 @@ export const recipes = pgTable("recipes", {
   instructions: jsonb("instructions").$type<string[]>().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("recipes_category_difficulty_idx").on(t.category, t.difficulty),
+  index("recipes_created_at_idx").on(t.createdAt),
+]);
 
 export type DbRecipe = typeof recipes.$inferSelect;
 export type NewDbRecipe = typeof recipes.$inferInsert;
@@ -171,7 +174,11 @@ export const trainingPlans = pgTable("training_plans", {
   safetyNotes: jsonb("safety_notes").$type<string[]>().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("training_plans_goal_type_level_idx").on(t.goalType, t.level),
+  index("training_plans_level_idx").on(t.level),
+  index("training_plans_created_at_idx").on(t.createdAt),
+]);
 
 export type DbTrainingPlan = typeof trainingPlans.$inferSelect;
 export type NewDbTrainingPlan = typeof trainingPlans.$inferInsert;
@@ -198,7 +205,11 @@ export const products = pgTable("products", {
   tags: jsonb("tags").$type<string[]>().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("products_category_created_at_idx").on(t.category, t.createdAt),
+  index("products_category_protein_idx").on(t.category, t.protein),
+  index("products_created_at_idx").on(t.createdAt),
+]);
 
 export type DbProduct = typeof products.$inferSelect;
 export type NewDbProduct = typeof products.$inferInsert;
