@@ -295,7 +295,7 @@ Use these accounts when testing authentication flows:
 
 | Role | Email | Password |
 |---|---|---|
-| User | `user@fitlife.bg` | `password123` |
+| User | `peter@abv.bg` | `asd123asd` |
 | Admin | `admin@fitlife.bg` | `admin1234` |
 
 The "Forgot Password" functionality works with real email delivery. To test it properly, register with or use an existing email address that you can access, then open the password reset link from that inbox.
