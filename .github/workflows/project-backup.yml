@@ -22,13 +22,17 @@ jobs:
       BACKUP_BUCKET:         ${{ secrets.R2_BACKUP_BUCKET_NAME }}
 
     steps:
-      # ── Timestamp ─────────────────────────────────────────────────────────────
-      - name: Generate backup timestamp
+      # ── Timestamp & tier classification ───────────────────────────────────────
+      - name: Generate backup timestamp and classify tier
         id: ts
         run: |
           TS=$(date -u '+%Y-%m-%d-%H-%M')
-          echo "TS=$TS" >> "$GITHUB_OUTPUT"
-          echo "Backup run: $TS UTC"
+          DAY_OF_WEEK=$(date -u '+%u')    # 1=Mon … 7=Sun
+          DAY_OF_MONTH=$(date -u '+%d')   # 01-31
+          echo "TS=$TS"                   >> "$GITHUB_OUTPUT"
+          echo "DAY_OF_WEEK=$DAY_OF_WEEK" >> "$GITHUB_OUTPUT"
+          echo "DAY_OF_MONTH=$DAY_OF_MONTH" >> "$GITHUB_OUTPUT"
+          echo "Backup run: $TS UTC (weekday=$DAY_OF_WEEK, day-of-month=$DAY_OF_MONTH)"
 
       # ── PostgreSQL client ──────────────────────────────────────────────────────
       - name: Install PostgreSQL 16 client
@@ -56,7 +60,6 @@ jobs:
       - name: Sync app storage bucket to local directory
         run: |
           mkdir -p storage-backup
-          # --no-progress keeps logs clean; sync exits 0 even for an empty bucket.
           aws s3 sync "s3://$APP_BUCKET/" ./storage-backup/ \
             --endpoint-url "$R2_ENDPOINT" \
             --no-progress
@@ -69,59 +72,139 @@ jobs:
           echo "STORAGE_FILE=$STORAGE_FILE" >> "$GITHUB_ENV"
           echo "Storage archive complete. Size: $(du -sh "$STORAGE_FILE" | cut -f1)"
 
-      # ── Upload to backup bucket ────────────────────────────────────────────────
-      - name: Upload database backup
+      # ── Upload to daily prefix ─────────────────────────────────────────────────
+      - name: Upload database backup (daily)
         run: |
           aws s3 cp "$DB_FILE" \
             "s3://$BACKUP_BUCKET/backups/daily/db/$DB_FILE" \
             --endpoint-url "$R2_ENDPOINT"
           echo "Uploaded → backups/daily/db/$DB_FILE"
 
-      - name: Upload storage backup
+      - name: Upload storage backup (daily)
         run: |
           aws s3 cp "$STORAGE_FILE" \
             "s3://$BACKUP_BUCKET/backups/daily/storage/$STORAGE_FILE" \
             --endpoint-url "$R2_ENDPOINT"
           echo "Uploaded → backups/daily/storage/$STORAGE_FILE"
 
-      # ── Retention policy: keep the 7 most recent of each type ─────────────────
-      - name: Prune old database backups (keep latest 7)
+      # ── Weekly copy (every Sunday = day 7) ────────────────────────────────────
+      - name: Upload weekly copy (Sundays only)
+        if: steps.ts.outputs.DAY_OF_WEEK == '7'
         run: |
-          echo "Checking for old database backups to prune..."
-          # Sort newest-first by filename (names embed the timestamp).
-          # tail -n +8 outputs lines 8 onwards — i.e. everything beyond the 7 newest.
+          aws s3 cp "$DB_FILE" \
+            "s3://$BACKUP_BUCKET/backups/weekly/db/$DB_FILE" \
+            --endpoint-url "$R2_ENDPOINT"
+          aws s3 cp "$STORAGE_FILE" \
+            "s3://$BACKUP_BUCKET/backups/weekly/storage/$STORAGE_FILE" \
+            --endpoint-url "$R2_ENDPOINT"
+          echo "Weekly copies uploaded."
+
+      # ── Monthly copy (1st of each month) ──────────────────────────────────────
+      - name: Upload monthly copy (1st of month only)
+        if: steps.ts.outputs.DAY_OF_MONTH == '01'
+        run: |
+          aws s3 cp "$DB_FILE" \
+            "s3://$BACKUP_BUCKET/backups/monthly/db/$DB_FILE" \
+            --endpoint-url "$R2_ENDPOINT"
+          aws s3 cp "$STORAGE_FILE" \
+            "s3://$BACKUP_BUCKET/backups/monthly/storage/$STORAGE_FILE" \
+            --endpoint-url "$R2_ENDPOINT"
+          echo "Monthly copies uploaded."
+
+      # ── Retention: daily — keep 7 most recent ─────────────────────────────────
+      - name: Prune old daily database backups (keep 7)
+        run: |
           OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/daily/db/" \
             --endpoint-url "$R2_ENDPOINT" \
-            | sort -r \
-            | tail -n +8 \
-            | awk '{print $4}')
-
+            | sort -r | tail -n +8 | awk '{print $4}')
           if [ -z "$OLD" ]; then
-            echo "Nothing to prune (fewer than 8 database backups exist)."
+            echo "Nothing to prune (daily DB)."
           else
             for f in $OLD; do
-              echo "Deleting: $f"
               aws s3 rm "s3://$BACKUP_BUCKET/backups/daily/db/$f" \
                 --endpoint-url "$R2_ENDPOINT"
+              echo "Deleted: $f"
             done
           fi
 
-      - name: Prune old storage backups (keep latest 7)
+      - name: Prune old daily storage backups (keep 7)
         run: |
-          echo "Checking for old storage backups to prune..."
           OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/daily/storage/" \
             --endpoint-url "$R2_ENDPOINT" \
-            | sort -r \
-            | tail -n +8 \
-            | awk '{print $4}')
-
+            | sort -r | tail -n +8 | awk '{print $4}')
           if [ -z "$OLD" ]; then
-            echo "Nothing to prune (fewer than 8 storage backups exist)."
+            echo "Nothing to prune (daily storage)."
           else
             for f in $OLD; do
-              echo "Deleting: $f"
               aws s3 rm "s3://$BACKUP_BUCKET/backups/daily/storage/$f" \
                 --endpoint-url "$R2_ENDPOINT"
+              echo "Deleted: $f"
+            done
+          fi
+
+      # ── Retention: weekly — keep 5 most recent ────────────────────────────────
+      - name: Prune old weekly database backups (keep 5)
+        if: steps.ts.outputs.DAY_OF_WEEK == '7'
+        run: |
+          OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/weekly/db/" \
+            --endpoint-url "$R2_ENDPOINT" \
+            | sort -r | tail -n +6 | awk '{print $4}')
+          if [ -z "$OLD" ]; then
+            echo "Nothing to prune (weekly DB)."
+          else
+            for f in $OLD; do
+              aws s3 rm "s3://$BACKUP_BUCKET/backups/weekly/db/$f" \
+                --endpoint-url "$R2_ENDPOINT"
+              echo "Deleted: $f"
+            done
+          fi
+
+      - name: Prune old weekly storage backups (keep 5)
+        if: steps.ts.outputs.DAY_OF_WEEK == '7'
+        run: |
+          OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/weekly/storage/" \
+            --endpoint-url "$R2_ENDPOINT" \
+            | sort -r | tail -n +6 | awk '{print $4}')
+          if [ -z "$OLD" ]; then
+            echo "Nothing to prune (weekly storage)."
+          else
+            for f in $OLD; do
+              aws s3 rm "s3://$BACKUP_BUCKET/backups/weekly/storage/$f" \
+                --endpoint-url "$R2_ENDPOINT"
+              echo "Deleted: $f"
+            done
+          fi
+
+      # ── Retention: monthly — keep 12 most recent ──────────────────────────────
+      - name: Prune old monthly database backups (keep 12)
+        if: steps.ts.outputs.DAY_OF_MONTH == '01'
+        run: |
+          OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/monthly/db/" \
+            --endpoint-url "$R2_ENDPOINT" \
+            | sort -r | tail -n +13 | awk '{print $4}')
+          if [ -z "$OLD" ]; then
+            echo "Nothing to prune (monthly DB)."
+          else
+            for f in $OLD; do
+              aws s3 rm "s3://$BACKUP_BUCKET/backups/monthly/db/$f" \
+                --endpoint-url "$R2_ENDPOINT"
+              echo "Deleted: $f"
+            done
+          fi
+
+      - name: Prune old monthly storage backups (keep 12)
+        if: steps.ts.outputs.DAY_OF_MONTH == '01'
+        run: |
+          OLD=$(aws s3 ls "s3://$BACKUP_BUCKET/backups/monthly/storage/" \
+            --endpoint-url "$R2_ENDPOINT" \
+            | sort -r | tail -n +13 | awk '{print $4}')
+          if [ -z "$OLD" ]; then
+            echo "Nothing to prune (monthly storage)."
+          else
+            for f in $OLD; do
+              aws s3 rm "s3://$BACKUP_BUCKET/backups/monthly/storage/$f" \
+                --endpoint-url "$R2_ENDPOINT"
+              echo "Deleted: $f"
             done
           fi
 
@@ -133,4 +216,5 @@ jobs:
           echo "  Database : backups/daily/db/$DB_FILE"
           echo "  Storage  : backups/daily/storage/$STORAGE_FILE"
           echo "  Bucket   : $BACKUP_BUCKET"
+          echo "  Tiers    : daily (7) | weekly on Sun (5) | monthly on 1st (12)"
           echo "========================================"
