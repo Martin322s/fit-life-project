@@ -248,10 +248,30 @@ cd fit-life-project
 ```powershell
 cd server
 npm install
-copy .env.example .env.local
 ```
 
-Edit `server/.env.local` and fill in the database connection string.
+Create `server/.env` and fill in your values:
+
+```
+JWT_SECRET=
+DATABASE_URL=
+CLIENT_URL=
+SERVER_URL=
+EMAILJS_SERVICE_ID=
+EMAILJS_TEMPLATE_ID=
+EMAILJS_PUBLIC_KEY=
+EMAILJS_ACCESS_TOKEN=
+CONTACT_EMAILJS_SERVICE_ID=
+CONTACT_EMAILJS_TEMPLATE_ID=
+CONTACT_EMAILJS_PUBLIC_KEY=
+CONTACT_EMAILJS_ACCESS_TOKEN=
+CONTACT_TO_EMAIL=
+R2_ACCOUNT_ID=
+R2_BUCKET_NAME=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_PUBLIC_URL=
+```
 
 Prepare the database:
 
@@ -280,10 +300,15 @@ Runs on `http://localhost:3001`
 
 ### 2. Web Client
 
+Create `client/.env`:
+
+```
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+```
+
 ```powershell
 cd client
 npm install
-copy .env.example .env
 npm run dev
 ```
 
