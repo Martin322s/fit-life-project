@@ -9,3 +9,4 @@ build/
 .expo/
 .turbo/
 *.log
+.claude/
