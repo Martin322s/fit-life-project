@@ -6,7 +6,8 @@
       "Bash(git -C d:/GitHub/fit-life-project log --oneline --format=\"%h %ad %s\" --date=short)",
       "Bash(git -C d:/GitHub/fit-life-project status --short)",
       "Bash(git -C d:/GitHub/fit-life-project diff --cached --name-only)",
-      "Bash(git -C d:/GitHub/fit-life-project mv \"client/src/layout/Navbar/MobileNavBar.tsx\" \"client/src/layout/Navbar/MobileNavbar.tsx\")"
+      "Bash(git -C d:/GitHub/fit-life-project mv \"client/src/layout/Navbar/MobileNavBar.tsx\" \"client/src/layout/Navbar/MobileNavbar.tsx\")",
+      "Bash(git rm *)"
     ]
   }
 }
