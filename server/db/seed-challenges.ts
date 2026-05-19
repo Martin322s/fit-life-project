@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import type { ChallengeInput } from "../lib/repositories/challenges";
 
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 type Template = {
   title: string;
