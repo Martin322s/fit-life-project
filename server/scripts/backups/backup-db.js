@@ -10,7 +10,7 @@
  *     or replay at any point in time.
  *
  * How it works:
- *   1. Reads DATABASE_URL from server/.env.local
+ *   1. Reads DATABASE_URL from server/.env
  *   2. Tries pg_dump (the industry-standard PostgreSQL backup tool)
  *   3. Falls back to a pure Node.js export using the 'pg' package
  *   4. Saves a .sql file to server/backups/database/
@@ -30,8 +30,8 @@ const path = require('path');
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-// Load .env.local from the server root so DATABASE_URL is available
-require('dotenv').config({ path: path.join(__dirname, '../../.env.local') });
+// Load .env from the server root so DATABASE_URL is available
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const BACKUP_DIR = path.resolve(__dirname, '../../backups/database');
@@ -40,7 +40,7 @@ const BACKUP_DIR = path.resolve(__dirname, '../../backups/database');
 
 if (!DATABASE_URL) {
   console.error('[backup] ERROR: DATABASE_URL is not set.');
-  console.error('[backup] Add it to server/.env.local:');
+  console.error('[backup] Add it to server/.env:');
   console.error('[backup]   DATABASE_URL=postgresql://user:pass@host/db');
   process.exit(1);
 }
