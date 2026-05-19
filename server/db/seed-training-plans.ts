@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import type { TrainingPlanInput } from "../lib/repositories/training-plans";
 
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 type Template = Pick<TrainingPlanInput, "goalType" | "level" | "equipment" | "targetMuscles" | "safetyNotes"> & {
   title: string;
