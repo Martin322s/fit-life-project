@@ -58,8 +58,17 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
-    // Fire-and-forget: delete old R2 object after the new upload succeeds.
+    // Read the old URL before updating, then update the DB, then delete the old
+    // file. This order ensures the old avatar is only removed after the new URL
+    // is safely persisted — a DB failure no longer leaves the user avatarless.
+    const avatarUrl = generatePublicUrl(key);
     const existing = await repo.getByUserId(auth.payload.sub);
+    const profile = await repo.updateByUserId(auth.payload.sub, { avatarUrl });
+    if (!profile) {
+      deleteProfileImage(key).catch(() => {});
+      return NextResponse.json({ message: "Профилът не е намерен." }, { status: 404 });
+    }
+
     if (existing?.avatarUrl) {
       const oldKey = extractKeyFromUrl(existing.avatarUrl);
       if (oldKey) {
@@ -69,8 +78,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const avatarUrl = generatePublicUrl(key);
-    const profile = await repo.updateByUserId(auth.payload.sub, { avatarUrl });
     return NextResponse.json({ profile }, { status: 200 });
   } catch (err) {
     console.error("POST /api/profile/avatar", err);
@@ -86,6 +93,11 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const existing = await repo.getByUserId(auth.payload.sub);
+    const profile = await repo.updateByUserId(auth.payload.sub, { avatarUrl: null });
+    if (!profile) {
+      return NextResponse.json({ message: "Профилът не е намерен." }, { status: 404 });
+    }
+
     if (existing?.avatarUrl) {
       const key = extractKeyFromUrl(existing.avatarUrl);
       if (key) {
@@ -95,7 +107,6 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    const profile = await repo.updateByUserId(auth.payload.sub, { avatarUrl: null });
     return NextResponse.json({ profile }, { status: 200 });
   } catch (err) {
     console.error("DELETE /api/profile/avatar", err);

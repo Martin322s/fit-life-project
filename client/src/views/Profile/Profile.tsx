@@ -610,7 +610,7 @@ function AvatarUploadBox({
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
                     <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handleFile} />
-                    <button type="button" className="btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
+                    <button type="button" className="btn-ghost btn-sm" disabled={saving} onClick={() => fileRef.current?.click()}>
                         📷 Избери снимка
                     </button>
                     {selectedFile && (
