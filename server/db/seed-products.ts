@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import type { ProductInput } from "../lib/repositories/products";
 
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 type Row = [string, ProductInput["category"], string | null, number, number, number, number, number, number | null, number | null, number | null, string[]];
 
