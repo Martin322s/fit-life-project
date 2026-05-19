@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 import bcrypt from "bcryptjs";
 import { neon } from "@neondatabase/serverless";
@@ -8,7 +8,7 @@ import * as schema from "./schema";
 import { sql } from "drizzle-orm";
 
 const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is not set in .env.local");
+if (!url) throw new Error("DATABASE_URL is not set in .env");
 
 const db = drizzle(neon(url), { schema });
 
