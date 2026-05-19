@@ -3,7 +3,7 @@ import { config } from "dotenv";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 // Node.js has no built-in WebSocket — supply one so drizzle-kit can connect.
 neonConfig.webSocketConstructor = ws;
