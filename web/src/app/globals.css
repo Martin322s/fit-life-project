@@ -1,0 +1,22 @@
+/* Tailwind CSS v4 — base layer import */
+@import "tailwindcss";
+
+/*
+ * FitLife uses a hybrid CSS approach:
+ *   - Tailwind utility classes: used in all new/updated components
+ *   - fitlife-styles-v2.css (public/): legacy stylesheet for existing views
+ *     (loaded via <link> in layout.tsx, progressively migrated to Tailwind)
+ */
+
+/* ─── Custom theme tokens (override Tailwind defaults) ───────────────────── */
+@theme {
+  --color-brand: #ff6b35;
+  --color-brand-dark: #e55a25;
+  --color-surface: #1a1a2e;
+  --color-surface-2: #16213e;
+  --color-surface-3: #0f3460;
+  --color-text-primary: #e0e0e0;
+  --color-text-muted: #9ca3af;
+  --font-sans: Inter, system-ui, sans-serif;
+  --radius-card: 12px;
+}
