@@ -7,16 +7,9 @@ const nextConfig: NextConfig = {
     // preserving IDE type-checking. All actual type errors in app code are still visible in the IDE.
     ignoreBuildErrors: true,
   },
-  async rewrites() {
-    const apiBase =
-      process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiBase}/api/:path*`,
-      },
-    ];
-  },
+  // API routes are now served by this same Next.js app (unified full-stack app).
+  // No proxy rewrite needed — /api/* is handled by src/app/api/ route handlers.
+  // NEXT_PUBLIC_API_BASE_URL is kept only for the Expo mobile app (external client).
 };
 
 export default nextConfig;

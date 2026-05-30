@@ -1,6 +1,6 @@
 # FitLife — Mobile App
 
-Expo / React Native app for iOS and Android. Uses file-based routing via Expo Router and communicates with the same FitLife server API as the web client.
+Expo / React Native app for iOS, Android, and **web**. Uses file-based routing via Expo Router and communicates with the FitLife unified Next.js app (`client/`) via REST API calls.
 
 ## Tech Stack
 
@@ -10,7 +10,36 @@ Expo / React Native app for iOS and Android. Uses file-based routing via Expo Ro
 - **TypeScript 5.9**
 - **AsyncStorage** — local auth token persistence
 - **React Native Gesture Handler**, **Safe Area Context**, **Screens**
-- **EAS Build** — cloud build for iOS and Android
+- **EAS Build** — cloud build for iOS and Android (optional)
+
+## Deployment — Expo Web (capstone-required)
+
+The primary deployment path for the capstone is **Expo web export** — a static site served from Netlify or similar:
+
+```bash
+npm install
+npm run export:web       # runs: npx expo export --platform web
+# Output: mobile/dist/
+```
+
+Deploy the `dist/` folder to Netlify:
+1. In the Netlify dashboard, click **"Add new site → Deploy manually"**.
+2. Drag and drop the `mobile/dist/` folder.
+3. Netlify serves the static Expo web app instantly.
+
+The web export connects to the same `/api/*` endpoints on the unified Next.js app.
+
+## Deployment — Android APK (optional bonus)
+
+EAS Build creates a distributable `.apk` for Android sideloading:
+
+```bash
+npm install -g eas-cli
+eas login
+eas build --profile preview --platform android
+```
+
+Pre-built Android APK: <https://expo.dev/accounts/martin13s18/projects/fit-life/builds/ec050589-bc7a-4f19-918f-3ee2fb0ecaab>
 
 ## Project Structure
 
@@ -23,50 +52,47 @@ mobile/
 │   └── (tabs)/             # Bottom-tab pages: dashboard, calories, weight, training, more
 ├── src/
 │   ├── components/         # Shared UI components
+│   ├── config/             # API base URL resolution
 │   ├── context/            # AuthContext
-│   ├── data/               # Static/seeded data helpers
-│   ├── hooks/              # useStorage and other hooks
 │   ├── services/           # API service modules per feature
 │   ├── types/              # Shared TypeScript types
-│   └── theme.ts            # Design tokens
+│   └── theme.ts            # Design tokens (C, R)
 ├── assets/images/          # App icon variants, splash screen
 ├── app.json                # Expo config
-├── eas.json                # EAS build profiles
-└── .env                    # EXPO_PUBLIC_API_BASE_URL
+└── eas.json                # EAS build profiles
 ```
 
 ## Environment Variables
 
-Create `mobile/.env`:
+The mobile app resolves the API base URL automatically from `src/config/app.config.ts`:
+- **Development**: Expo debugger host (LAN IP of your dev machine), port `3000`.
+- **Production builds**: reads `process.env.NEXT_PUBLIC_API_BASE_URL` set in `client/.env`.
 
-```env
-EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
-```
-
-Device-specific values:
+No separate `mobile/.env` is required for standard usage. If you need to override the API URL:
 
 ```env
 # iOS Simulator or web
-EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
+EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
 
 # Android Emulator (10.0.2.2 maps to host machine localhost)
-EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3001
+EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3000
 
-# Physical device (replace with your machine's LAN IP)
-EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:3001
+# Physical device
+EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:3000
 
 # Production
-EXPO_PUBLIC_API_BASE_URL=https://your-deployed-api.example.com
+EXPO_PUBLIC_API_BASE_URL=https://fitlife-com.netlify.app
 ```
 
 ## Setup & Development
 
 ```bash
+cd mobile
 npm install
 npm run start
 ```
 
-Scan the QR code with **Expo Go** (iOS/Android) or press `a` for Android emulator / `i` for iOS simulator.
+Press `a` for Android emulator, `i` for iOS simulator, `w` for browser, or scan the QR code with Expo Go.
 
 ## Available Scripts
 
@@ -75,33 +101,10 @@ Scan the QR code with **Expo Go** (iOS/Android) or press `a` for Android emulato
 | `npm run start` | Start Expo dev server |
 | `npm run android` | Open on Android emulator |
 | `npm run ios` | Open on iOS simulator |
-| `npm run web` | Open in browser |
+| `npm run web` | Open in browser (Expo dev mode) |
+| `npm run export:web` | **Build static Expo web export → `dist/`** |
 | `npm run lint` | Run ESLint via `expo lint` |
 | `npm run typecheck` | TypeScript type check (no emit) |
-
-## Building for Production (EAS)
-
-Requires an [Expo account](https://expo.dev) and the EAS CLI:
-
-```bash
-npm install -g eas-cli
-eas login
-```
-
-Build an Android APK (preview profile):
-
-```bash
-eas build --profile preview --platform android
-```
-
-Build for production:
-
-```bash
-eas build --profile production --platform android
-eas build --profile production --platform ios
-```
-
-Pre-built Android APK: https://expo.dev/accounts/martin13s18/projects/fit-life/builds/ec050589-bc7a-4f19-918f-3ee2fb0ecaab
 
 ## Navigation Structure
 
@@ -121,7 +124,11 @@ Root layout (_layout.tsx)
         └── more           → links to recipes, diets, products, challenges, calculators, profile
 ```
 
+Additional detail screens (outside tabs):
+`recipes`, `diets`, `training-plans`, `products`, `challenges`, `calculators`, `profile`
+
 ## Notes
 
 - Auth tokens are stored in AsyncStorage. Before a store release, migrate to Expo SecureStore.
 - All user-facing copy is in Bulgarian.
+- The REST API endpoints are hosted by `client/src/app/api/` in the unified Next.js app.

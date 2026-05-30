@@ -16,16 +16,16 @@ Core features include authentication, calorie and meal tracking, hydration, weig
 
 ```text
 fit-life-project/
-+-- client/   Web frontend - Next.js 15 + React 19
-+-- server/   Backend API - Next.js 16 route handlers + PostgreSQL + Drizzle
-+-- mobile/   Mobile app - Expo 54 + React Native 0.81
++-- client/   Unified full-stack app — Next.js 15 web UI + /api/* REST endpoints + Server Actions
++-- mobile/   Mobile app — Expo 54 + React Native 0.81
++-- server/   Legacy standalone API (reference only — not the primary deployment)
 ```
 
-All three apps are active. Do not assume `server/` is empty or that work is mobile-only. Before editing, inspect the relevant app and follow its existing patterns.
+**Important:** `client/` is the primary and production-intended app. It contains both the web frontend and the backend API. Do not direct new backend work to `server/` — make changes in `client/src/app/api/` and `client/src/lib/server/` instead.
 
 ---
 
-## Web Client (`client/`)
+## Unified App (`client/`)
 
 ### Framework & Runtime
 
@@ -34,105 +34,76 @@ All three apps are active. Do not assume `server/` is empty or that work is mobi
 | Framework | Next.js 15 App Router |
 | UI | React 19 |
 | Language | TypeScript 5.9 |
-| Styling | Existing CSS files/public stylesheet; Tailwind CSS 4 is installed as a dependency |
+| Styling | Tailwind CSS v4 (globals.css) + legacy `fitlife-styles-v2.css` for existing views |
+| Backend logic | `src/lib/server/` (auth, JWT, repositories, storage, validation) |
+| Database | Drizzle ORM + Neon PostgreSQL (`src/db/`) |
+| Server Actions | `src/app/actions/` (primary web ↔ backend channel) |
+| REST API | `src/app/api/` (for Expo mobile app and legacy web fallback) |
 | Deployment | Netlify with `@netlify/plugin-nextjs` |
-| API config | `src/services/apiConfig.ts` and `NEXT_PUBLIC_API_BASE_URL` |
 
 ### Directory Layout
 
 ```text
 client/
 +-- src/
-|   +-- app/          Next.js App Router route folders and `page.tsx` wrappers
-|   +-- views/        Feature view implementations and section components
-|   +-- layout/       MainLayout, DashboardLayout, Navbar, Footer, Logo
-|   +-- components/   Shared UI and route guards
-|   +-- context/      AuthContext and ThemeContext
-|   +-- hooks/        Feature data hooks and local storage hook
-|   +-- services/     API client modules
-|   +-- lib/          Utility helpers, calculators, label maps
-|   +-- assets/       Imported client assets
-+-- public/           Public assets and global stylesheet
+|   +-- app/
+|   |   +-- api/          REST API route handlers (35+ endpoints)
+|   |   +-- actions/      Server Actions (auth, profile, catalog, progress)
+|   |   +-- [page]/       Web UI pages (page.tsx wrappers)
+|   +-- db/               Drizzle schema, DB connection, seed scripts
+|   +-- lib/
+|   |   +-- server/       Backend logic: auth, JWT, repositories, storage, validation
+|   |   +-- (other)       Frontend utilities: calculators, label maps
+|   +-- views/            Feature view implementations and section components
+|   +-- layout/           MainLayout, DashboardLayout, Navbar, Footer
+|   +-- components/       Shared UI and route guards
+|   +-- context/          AuthContext and ThemeContext
+|   +-- hooks/            Feature data hooks and local storage hook
+|   +-- services/         REST API client modules (used by mobile and legacy web calls)
++-- drizzle/              Generated SQL migration files
++-- drizzle.config.ts     Drizzle Kit configuration
++-- public/               Static assets and global stylesheet (fitlife-styles-v2.css)
 +-- next.config.ts
 +-- netlify.toml
 ```
 
-### Client Conventions
+### Communication Conventions
 
-- Routes live under `src/app/<route>/page.tsx`.
-- Keep route files thin when possible; put feature UI in `src/views/<Feature>/`.
-- Use existing service modules in `src/services/` for API calls.
-- Use existing feature hooks in `src/hooks/` before creating new data-fetching logic.
-- Use `MainLayout`, `DashboardLayout`, and existing route guards instead of inlining layout/auth logic.
-- The app uses `AuthContext` and `ThemeContext`; do not add Redux, Zustand, MobX, or another global state library unless explicitly requested.
-- Tailwind is installed, but do not rewrite existing CSS to Tailwind unless the task specifically asks for it.
+- **Web client → backend**: Prefer Server Actions from `src/app/actions/`.
+- **Mobile → backend**: REST API routes in `src/app/api/`.
+- **Existing web service calls** in `src/services/*Api.ts` use same-origin `/api/*` fetch (no base URL); these are a valid fallback while Server Actions cover more flows.
+- Do **not** add a new `NEXT_PUBLIC_API_BASE_URL` reference for web-only calls — it is reserved for the Expo mobile app.
+
+### Backend Conventions
+
+- API route handlers live in `src/app/api/**/route.ts`.
+- Auth helpers live in `src/lib/server/`:
+  - `jwt.ts` — token signing and verification.
+  - `require-auth.ts` — `requireAuth()` validates Bearer token from the `Authorization` header.
+  - `auth.ts` — login, register, forgotPassword, resetPassword, getUserFromToken.
+- Database access goes through typed repository modules in `src/lib/server/repositories/`.
+- Admin endpoints must enforce the admin role via `requireAuth()` + role check.
+- Never hardcode secrets. Use environment variables as documented in `.env.example`.
+
+### Tailwind CSS
+
+- Tailwind v4 is configured via `postcss.config.mjs` and imported in `src/app/globals.css`.
+- New components should use Tailwind utility classes.
+- Existing CSS-heavy views (`src/views/`) use the legacy `fitlife-styles-v2.css`; migrate to Tailwind progressively without breaking the UI.
+- Theme tokens are defined in the `@theme` block in `globals.css`.
 
 ### Client Scripts
 
-```powershell
+```bash
 cd client
 npm install
-npm run dev      # http://localhost:3000
+npm run dev          # http://localhost:3000 (web + /api/*)
 npm run build
-npm run start
-```
-
----
-
-## Server API (`server/`)
-
-### Framework & Runtime
-
-| Concern | Technology |
-|---|---|
-| Framework | Next.js 16 App Router route handlers |
-| Language | TypeScript |
-| Database | PostgreSQL / Neon |
-| ORM | Drizzle ORM |
-| Auth | JWT + bcryptjs |
-| Email | EmailJS for contact and password reset flows |
-| Local port | `3001` via `npm run dev` |
-
-### Directory Layout
-
-```text
-server/
-+-- app/api/          REST endpoints
-+-- db/schema.ts      Drizzle schema
-+-- db/seed*.ts       Seed scripts
-+-- drizzle/          Generated migrations
-+-- lib/              Auth, repositories, validation, storage helpers
-+-- middleware.ts     CORS / origin-whitelist only (not JWT)
-+-- scripts/backups/  Database backup scripts
-```
-
-### Server Conventions
-
-- API routes live in `app/api/**/route.ts`.
-- Keep database access in repository/helper modules under `lib/` where that pattern already exists.
-- Update `db/schema.ts` for schema changes and generate migrations with Drizzle when required.
-- Use existing auth helpers:
-  - `lib/jwt.ts` — token signing and verification.
-  - `lib/require-auth.ts` — `requireAuth()` extracts and validates the JWT Bearer
-    token from the `Authorization` header; returns a typed payload or a 401/403
-    response. Use this in every protected route handler.
-  - `lib/auth.ts` — higher-level login/register/forgot-password business logic.
-  - `middleware.ts` handles **CORS / origin whitelist only** — it does not validate
-    JWT tokens. Do not rely on it for authorization.
-- Admin endpoints must enforce the admin role via `requireAuth()` + role check.
-- Do not bypass validation helpers when a feature already has validation modules.
-- Never commit real secrets. Use `.env.example` for documented variable names only.
-
-### Server Scripts
-
-```powershell
-cd server
-npm install
-npm run dev          # http://localhost:3001
-npm run build
+npm run typecheck
 npm run db:generate
 npm run db:migrate
 npm run db:seed
+npm run db:seed:full  # all catalogs + 10K rows
 ```
 
 ---
@@ -148,7 +119,7 @@ npm run db:seed
 | Routing | Expo Router 6 |
 | Persistence | AsyncStorage |
 | Styling | React Native `StyleSheet.create()` + centralized theme tokens |
-| API config | `src/config/app.config.ts` |
+| API config | `src/config/app.config.ts` — resolves `NEXT_PUBLIC_API_BASE_URL` |
 
 ### Directory Layout
 
@@ -161,36 +132,36 @@ mobile/
 |   +-- index.tsx            Splash/redirect guard
 +-- src/
 |   +-- components/          Shared React Native UI primitives
-|   +-- config/              App/API configuration
+|   +-- config/              API configuration
 |   +-- context/             AuthContext
-|   +-- data/                Local/static data where still used
-|   +-- hooks/               Custom hooks
-|   +-- services/            API and platform service wrappers
+|   +-- services/            API service wrappers (calls client/ /api/* routes)
 |   +-- types/               Shared TypeScript interfaces
 |   +-- theme.ts             Design tokens (`C`, `R`)
-+-- assets/images/           Icons and splash assets
 ```
 
 ### Mobile Conventions
 
-- Route files live under `mobile/app/`; use Expo Router group folders like `(auth)` and `(tabs)`.
-- Use `StyleSheet.create()` for styles.
-- Import design tokens from `src/theme.ts`:
-  - `C` for colors.
-  - `R` for border radii.
-- Do not add NativeWind, Styled Components, Tailwind, or another styling library to the mobile app unless explicitly requested.
+- Route files live under `mobile/app/`; use Expo Router group folders.
+- Use `StyleSheet.create()` for styles; import tokens from `src/theme.ts` (`C`, `R`).
+- Do not add NativeWind, Tailwind, or another styling library to the mobile app.
 - Use existing primitives in `src/components/` before creating new shared components.
-- Keep props type aliases named `Props` in component files and destructure props in the function signature.
 - Put shared interfaces in `src/types/index.ts`.
 
 ### Mobile Scripts
 
-```powershell
+```bash
 cd mobile
 npm install
-npm run start
+npm run start         # Expo dev server (a=Android, i=iOS, w=web)
 npm run typecheck
+npx expo export --platform web   # Expo web export for static deployment
 ```
+
+---
+
+## Legacy Server (`server/`)
+
+`server/` is kept for reference. It contains the original standalone API with identical logic to `client/src/lib/server/` and `client/src/app/api/`. For new API work, edit `client/` only. Do not create new routes in `server/`.
 
 ---
 
@@ -223,16 +194,16 @@ npm run typecheck
 
 - Do not install new dependencies without flagging and justifying the addition.
 - Prefer existing libraries and local helpers before adding packages.
-- Tailwind CSS is already installed in the web client, but not in the mobile app.
+- Tailwind CSS v4 is configured in `client/`; do not add it to `mobile/`.
 - Do not add global state libraries unless explicitly requested.
 
 ---
 
 ## Safety Rules
 
-- Do not generate backend code in a different stack; the backend is already implemented in `server/`.
+- The primary backend is now `client/src/app/api/` and `client/src/lib/server/`. Do not assume `server/` is the active backend.
 - Do not hardcode secrets, API keys, JWT secrets, database URLs, or email credentials.
 - Do not revert unrelated user changes.
-- Do not use `any` types unless there is no reasonable typed alternative and the choice is explained.
+- Do not use `any` types unless there is no reasonable typed alternative.
 - Keep changes scoped to the requested app/module.
-- When changing API contracts, update both the relevant server endpoint and affected client/mobile service types.
+- When changing API contracts, update both the `client/src/app/api/` route and affected `mobile/src/services/` types.

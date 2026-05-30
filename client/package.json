@@ -1,27 +1,55 @@
 {
-  "name": "client",
+  "name": "fitlife",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:seed:recipes": "tsx src/db/seed-recipes.ts",
+    "db:seed:diets": "tsx src/db/seed-diets.ts",
+    "db:seed:training-plans": "tsx src/db/seed-training-plans.ts",
+    "db:seed:products": "tsx src/db/seed-products.ts",
+    "db:seed:catalog-load": "tsx src/db/seed-catalog-load.ts",
+    "db:seed:challenges": "tsx src/db/seed-challenges.ts",
+    "db:seed:full": "npm run db:seed && npm run db:seed:recipes && npm run db:seed:diets && npm run db:seed:training-plans && npm run db:seed:products && npm run db:seed:challenges && npm run db:seed:catalog-load"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1045.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.2",
+    "jsonwebtoken": "^9.0.3",
     "next": "^15.3.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
     "@eslint/js": "^9.39.4",
     "@netlify/plugin-nextjs": "^5.15.11",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.12.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.3.2",
-    "typescript": "~5.9.3"
+    "pg": "^8.20.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3",
+    "ws": "^8.20.0"
   }
 }

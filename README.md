@@ -2,66 +2,92 @@
 
 Fit Life is a full-stack fitness and nutrition tracking application for Bulgarian-speaking users. It helps users register and manage a profile, track meals and calories, log weight and body progress, follow workouts and training plans, explore recipes and diets, join challenges, track hydration, and browse nutrition products.
 
-The project contains a web app, a mobile app, and an API server backed by a PostgreSQL database.
+The project is structured as a **Node.js monorepo** with a **unified full-stack Next.js app** (web UI + backend API) and an Expo mobile app.
 
 ```
 fit-life-project/
-+-- server/   API - Next.js + PostgreSQL + Drizzle ORM
-+-- client/   Web app - Next.js + React
-+-- mobile/   Mobile app - Expo + React Native
++-- client/   Unified full-stack app — Next.js web UI + /api/* route handlers + Drizzle DB
++-- mobile/   Mobile app — Expo + React Native
++-- server/   Legacy standalone API server (reference; not the primary deployment)
 ```
+
+## Architecture
+
+### Production-Intended Architecture
+
+The capstone-required architecture is **one Next.js application** that contains both the web frontend and the backend REST API:
+
+```
+Web browser  ──[Server Actions + same-origin /api/*]──▶  client/ Next.js app
+                                                               │
+                                                               ├── src/app/*          (web pages)
+                                                               ├── src/app/api/*      (REST API routes)
+                                                               ├── src/app/actions/*  (Server Actions)
+                                                               ├── src/db/            (Drizzle schema + seeds)
+                                                               └── src/lib/server/    (auth, JWT, repos, storage)
+                                                               │
+Expo mobile  ──[REST /api/* over HTTPS]─────────────────────▶  same app (public REST API)
+                                                               │
+                                                               ▼
+                                                        Neon PostgreSQL + Cloudflare R2
+```
+
+### Communication Patterns
+
+| Client | How it calls the backend | Why |
+|---|---|---|
+| Web (Next.js pages) | **Server Actions** (`src/app/actions/`) | Same-process call, no HTTP round-trip, no exposed credentials |
+| Web (legacy service calls) | Same-origin `/api/*` fetch | Progressive migration from REST to Server Actions |
+| Expo mobile app | `NEXT_PUBLIC_API_BASE_URL/api/*` REST calls | External client requires HTTP; same route handlers |
+
+### Technologies
+
+| Layer | Technology |
+|---|---|
+| Web + API | Next.js 15, React 19, TypeScript, Tailwind CSS v4 |
+| Mobile | Expo 54, React Native 0.81, Expo Router |
+| Database | PostgreSQL (Neon serverless) via Drizzle ORM |
+| Auth | JWT (7-day tokens) + bcrypt password hashing |
+| Object storage | Cloudflare R2 (user avatars + backups) |
+| Email | EmailJS (password reset + contact form) |
+| Deployment | Netlify (unified Next.js app), Expo Web / EAS (mobile) |
+
+### Server Actions
+
+Server Actions live in `client/src/app/actions/`. They call the database and auth libraries directly (no HTTP), making them the primary communication channel for the web client:
+
+| Action file | Covers |
+|---|---|
+| `actions/auth.ts` | login, register, logout, forgotPassword, resetPassword, getMe |
+| `actions/profile.ts` | getProfile, updateProfile |
+| `actions/catalog.ts` | getRecipes, getProducts, getDiets, getTrainingPlans, getChallenges (all paginated) |
+| `actions/progress.ts` | getProgress, createProgress, deleteProgress |
+
+### REST API Routes
+
+All REST API routes are in `client/src/app/api/` and are consumed by the Expo mobile app. The web client also falls back to them for operations not yet covered by Server Actions.
+
+| Group | Routes |
+|---|---|
+| Auth | `/api/auth/login`, `/api/auth/register`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/forgot-password`, `/api/auth/reset-password` |
+| Profile | `/api/profile`, `/api/profile/avatar` |
+| User data | `/api/meals`, `/api/workouts`, `/api/goals`, `/api/progress`, `/api/hydration` (all with `[id]` sub-routes) |
+| Account | `/api/account/password` |
+| Catalog | `/api/recipes`, `/api/diets`, `/api/training-plans`, `/api/products`, `/api/challenges` (paginated + search) |
+| User challenges | `/api/user-challenges` |
+| Admin | `/api/admin/stats`, `/api/admin/users` |
+| Contact | `/api/contact` |
 
 ## Project Description
 
 Fit Life is designed around everyday health tracking:
 
-- Visitors can view public pages such as home, about, contact, recipes, diets, training plans, challenges, products, and legal pages.
+- Visitors can view public pages: home, about, contact, recipes, diets, training plans, challenges, products, FAQ, and legal pages.
 - Registered users can sign in, edit their profile, set nutrition and fitness goals, log meals, hydration, workouts, and progress entries.
-- Users can browse structured fitness content such as recipes, diet guides, training plans, products, and challenges.
 - Admin users can access admin-only routes for user and application management.
 - The mobile app gives users a phone-first experience for the same core fitness workflows.
 
-All visible application text is intended to be in Bulgarian.
-
-## Architecture
-
-### High-Level System
-
-```mermaid
-flowchart LR
-  User[User] --> Web[Web Client<br/>Next.js + React]
-  User --> Mobile[Mobile App<br/>Expo + React Native]
-  Web --> API[API Server<br/>Next.js Route Handlers]
-  Mobile --> API
-  API --> DB[(PostgreSQL / Neon)]
-  API --> Auth[JWT Auth<br/>HTTP cookies / tokens]
-  API --> Email[EmailJS<br/>contact + password reset]
-```
-
-### Front End
-
-The web client lives in `client/` and is built with Next.js 15, React 19, TypeScript, and the Next.js App Router. It contains public pages, authenticated dashboard pages, admin-only pages, API service wrappers, reusable hooks, shared layout components, and Tailwind CSS installed as a dependency.
-
-### Mobile App
-
-The mobile app lives in `mobile/` and is built with Expo, React Native, TypeScript, and Expo Router. It uses file-based routes under `mobile/app/`, shared UI primitives under `mobile/src/components/`, service wrappers under `mobile/src/services/`, and a centralized dark theme in `mobile/src/theme.ts`.
-
-### Back End
-
-The API server lives in `server/` and uses Next.js route handlers under `server/app/api/`. It handles authentication, profiles, meals, workouts, goals, progress, hydration, recipes, diets, training plans, products, challenges, user challenges, contact messages, and admin data.
-
-### Database
-
-The database is PostgreSQL, commonly run through Neon. Drizzle ORM defines the schema in `server/db/schema.ts`, migrations are stored under `server/drizzle/`, and seed scripts live in `server/db/`.
-
-### API Communication
-
-- Web client API base URL: `client/src/services/apiConfig.ts`
-- Mobile API base URL: `mobile/src/config/app.config.ts`
-- Local API server: `http://localhost:3001`
-- Production API server: `https://fit-life-api.netlify.app`
-
-The clients call the API through feature-specific service files such as `authApi`, `profileApi`, `recipesApi`, `dietsApi`, `productsApi`, `hydrationApi`, and related modules.
+All visible application text is in Bulgarian.
 
 ## Database Schema Design
 
@@ -194,38 +220,48 @@ erDiagram
   }
 ```
 
-Content tables such as `recipes`, `diets`, `training_plans`, and `products` are global catalog data. User-owned tables reference `users.id` and are deleted when the user is deleted.
+Content tables (`recipes`, `diets`, `training_plans`, `products`) are global catalog data. User-owned tables reference `users.id` with cascade delete.
 
 ## Repository Structure
 
 ```text
 fit-life-project/
-+-- README.md                 Project overview and setup guide
-+-- DEPLOYMENT.md             Deployment notes
-+-- mobile-app-qr.svg         QR code for Android APK download
-+-- client/                   Web frontend
-|   +-- src/app/              Next.js App Router route folders
-|   +-- src/views/            Feature view implementations
-|   +-- src/layout/           Shared layout components
-|   +-- src/components/       Shared route guards and UI components
-|   +-- src/context/          Authentication context
-|   +-- src/hooks/            Data and local state hooks
-|   +-- src/services/         API clients for backend endpoints
-|   +-- public/               Static public assets and global CSS
-+-- mobile/                   Expo mobile app
-|   +-- app/                  Expo Router screens and route groups
-|   +-- src/components/       Shared React Native UI primitives
-|   +-- src/context/          Authentication context
-|   +-- src/services/         API service wrappers
-|   +-- src/types/            Shared TypeScript types
-|   +-- src/theme.ts          Dark theme tokens
-+-- server/                   Backend API
-    +-- app/api/              Next.js API route handlers
-    +-- db/schema.ts          Drizzle database schema
-    +-- db/seed*.ts           Seed scripts
-    +-- drizzle/              Generated migrations
-    +-- lib/                  Auth, validation, repositories
-    +-- scripts/backups/      Database backup scripts
++-- README.md                    Project overview and setup guide
++-- DEPLOYMENT.md                Deployment notes for unified app + mobile
++-- AGENTS.md                    AI agent instructions
++-- BACKUP.md                    Backup system guide
++-- .env.example                 Environment variable reference (copy to client/.env)
++-- .github/workflows/
+|   +-- project-backup.yml       Daily DB + R2 backup to private Cloudflare R2 bucket
++-- client/                      Unified full-stack Next.js app (primary deployment)
+|   +-- src/app/                 Next.js App Router — web pages + API routes + actions
+|   |   +-- api/                 REST API route handlers (35+ endpoints)
+|   |   +-- actions/             Server Actions (auth, profile, catalog, progress)
+|   |   +-- [page]/page.tsx      Web UI pages (23 pages total)
+|   +-- src/db/                  Drizzle schema, DB connection, seed scripts
+|   +-- src/lib/server/          Backend logic: auth, JWT, repositories, storage, validation
+|   +-- src/views/               Feature view implementations
+|   +-- src/layout/              Shared layout components (navbar, footer, sidebar)
+|   +-- src/components/          Route guards and shared UI components
+|   +-- src/context/             Authentication + theme context
+|   +-- src/hooks/               Data and local state hooks
+|   +-- src/services/            REST API clients (used by legacy web calls + mobile)
+|   +-- drizzle/                 Generated SQL migration files (0000-0013)
+|   +-- drizzle.config.ts        Drizzle Kit configuration
+|   +-- public/                  Static assets + global stylesheet (fitlife-styles-v2.css)
++-- mobile/                      Expo mobile app
+|   +-- app/                     Expo Router screens (auth group + tabs group + detail screens)
+|   +-- src/components/          Shared React Native UI primitives
+|   +-- src/context/             Authentication context
+|   +-- src/services/            REST API service wrappers (calls client/ /api/* routes)
+|   +-- src/types/               Shared TypeScript types
+|   +-- src/theme.ts             Dark theme tokens
++-- server/                      Legacy standalone API server (kept for reference)
+    +-- app/api/                 Original API route handlers
+    +-- db/                      Original schema + seeds (canonical source → copied to client/src/db/)
+    +-- drizzle/                 Migration SQL files (canonical source)
+    +-- lib/                     Original auth, repositories, storage
+    +-- scripts/backups/         Database backup scripts
 ```
 
 ## Local Development Setup
@@ -233,109 +269,75 @@ fit-life-project/
 ### Requirements
 
 - Node.js 18+
-- PostgreSQL / Neon database
-- Expo Go on your phone (optional, for physical device testing)
+- Neon PostgreSQL database (or local PostgreSQL)
+- Expo Go on your phone (optional, for mobile testing)
 
 ### Clone the Repository
 
-```powershell
-git clone <repository-url>
+```bash
+git clone https://github.com/Martin322s/fit-life-project.git
 cd fit-life-project
 ```
 
-### 1. Server
+### 1. Unified Next.js App (web + API)
 
-```powershell
-cd server
+```bash
+cd client
 npm install
 ```
 
-Create `server/.env` and fill in your values:
+Copy the environment variable reference and fill in your values:
+
+```bash
+cp ../.env.example .env
+# Edit .env with your DATABASE_URL, JWT_SECRET, R2 credentials, EmailJS keys, etc.
+```
+
+Key variables:
 
 ```
-JWT_SECRET=
-DATABASE_URL=
-CLIENT_URL=
-SERVER_URL=
-EMAILJS_SERVICE_ID=
-EMAILJS_TEMPLATE_ID=
-EMAILJS_PUBLIC_KEY=
-EMAILJS_ACCESS_TOKEN=
-CONTACT_EMAILJS_SERVICE_ID=
-CONTACT_EMAILJS_TEMPLATE_ID=
-CONTACT_EMAILJS_PUBLIC_KEY=
-CONTACT_EMAILJS_ACCESS_TOKEN=
-CONTACT_TO_EMAIL=
-R2_ACCOUNT_ID=
-R2_BUCKET_NAME=
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_PUBLIC_URL=
+DATABASE_URL=postgresql://...         # Neon connection string
+JWT_SECRET=...                        # At least 32 characters
+APP_URL=http://localhost:3000         # Used in password-reset email links
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000  # For Expo mobile app
 ```
 
 Prepare the database:
 
-```powershell
+```bash
 npm run db:migrate
 npm run db:seed
-```
-
-Optional feature-specific seed scripts:
-
-```powershell
-npm run db:seed:recipes
-npm run db:seed:diets
-npm run db:seed:training-plans
-npm run db:seed:products
-npm run db:seed:challenges
+npm run db:seed:full   # seeds recipes, diets, plans, products, challenges, 10K+ rows
 ```
 
 Start:
 
-```powershell
+```bash
 npm run dev
 ```
 
-Runs on `http://localhost:3001`
+Runs on `http://localhost:3000` — serves both web pages and `/api/*` endpoints.
 
-### 2. Web Client
+### 2. Mobile App
 
-Create `client/.env`:
-
-```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
-```
-
-```powershell
-cd client
+```bash
+cd mobile
 npm install
-npm run dev
+npm run start
 ```
 
-Runs on `http://localhost:3000` by default.
+Press `a` for Android emulator, `i` for iOS simulator, `w` for Expo web, or scan the QR code with Expo Go.
+
+The mobile app reads `NEXT_PUBLIC_API_BASE_URL` (set in `client/.env`) to reach the API. During development it points to `http://localhost:3000`.
 
 ### Test Accounts
-
-Use these accounts when testing authentication flows:
 
 | Role | Email | Password |
 |---|---|---|
 | User | `peter@abv.bg` | `asd123asd` |
 | Admin | `admin@fitlife.bg` | `admin1234` |
 
-The "Forgot Password" functionality works with real email delivery. To test it properly, register with or use an existing email address that you can access, then open the password reset link from that inbox.
-
-### 3. Mobile App
-
-```powershell
-cd mobile
-npm install
-npm run start
-```
-
-Press `a` for Android emulator, `i` for iOS simulator, `w` for browser, or scan the QR code with Expo Go.
-
-The app connects to the local API during development and to the production API in production builds.
+The "Forgot Password" functionality sends a real email. Use an accessible email address to receive the reset link.
 
 ---
 
@@ -343,28 +345,18 @@ The app connects to the local API during development and to the production API i
 
 ### Server-side pagination
 
-Every catalog endpoint (`/api/recipes`, `/api/products`, `/api/training-plans`,
-`/api/diets`, `/api/challenges`) supports `?page=` and `?limit=` query parameters.
-Responses include `{ items, page, limit, total, totalPages }` so clients can
-implement infinite scroll or numbered pages without loading the full dataset.
+Every catalog endpoint (`/api/recipes`, `/api/products`, `/api/training-plans`, `/api/diets`, `/api/challenges`) supports `?page=` and `?limit=` query parameters. Responses include `{ items, page, limit, total, totalPages }` for efficient client-side paging.
+
+Server Actions in `catalog.ts` expose the same pagination interface for the web client.
 
 ### 10,000-row catalog seed
 
-The script `db/seed-catalog-load.ts` seeds at least **10,000 rows** into
-`recipes`, `products`, and `training_plans` by generating variations from a curated
-base dataset. This provides realistic pagination, search, and index performance
-for evaluation and load testing.
+The script `src/db/seed-catalog-load.ts` seeds at least **10,000 rows** into `recipes`, `products`, and `training_plans` by generating variations from a curated base dataset.
 
-Run it with:
-
-```powershell
-cd server
+```bash
+cd client
 npm run db:seed:catalog-load
-```
-
-Or use the combined command that runs all seeds in order:
-
-```powershell
+# or use the combined command:
 npm run db:seed:full
 ```
 
@@ -383,29 +375,20 @@ Migration `0013_catalog_performance_indexes` adds:
 
 GIN / trgm indexes require the `pg_trgm` extension (enabled by default on Neon).
 
-### Drizzle ORM repositories
-
-All database access goes through typed repository modules in `server/lib/repositories/`.
-Each repository uses Drizzle's query builder, keeping SQL generation structured and
-preventing raw-string injection vulnerabilities.
-
 ### Neon serverless PostgreSQL
 
-The backend targets [Neon](https://neon.tech/), a serverless PostgreSQL provider.
-Neon scales compute to zero when idle and scales out automatically under load,
-which aligns with the serverless deployment model on Netlify.
+The backend targets [Neon](https://neon.tech/), a serverless PostgreSQL provider that scales compute to zero when idle and scales automatically under load — matching the serverless Netlify deployment model.
 
 ### Cloudflare R2 object storage
 
-User avatar images are stored in a Cloudflare R2 bucket, keeping binary assets
-out of the database and off the application server. R2 serves files via a public CDN URL.
+User avatar images are stored in Cloudflare R2 (`src/lib/server/storage.ts`), keeping binary assets out of the database. R2 also stores daily backup archives (see `BACKUP.md`).
 
 ---
 
 ## Hosted
 
-- Web: https://fitlife-com.netlify.app/
-- Android APK: https://expo.dev/accounts/martin13s18/projects/fit-life/builds/4d49c3a1-48dd-484b-bded-2e005690cbb3
+- Web (unified app): <https://fitlife-com.netlify.app/>
+- Android APK: <https://expo.dev/accounts/martin13s18/projects/fit-life/builds/4d49c3a1-48dd-484b-bded-2e005690cbb3>
 
 ## Download the Mobile App
 

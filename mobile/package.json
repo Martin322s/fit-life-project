@@ -7,6 +7,7 @@
     "android": "expo start --android --offline",
     "ios": "expo start --ios --offline",
     "web": "expo start --web --offline",
+    "export:web": "npx expo export --platform web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"
   },
