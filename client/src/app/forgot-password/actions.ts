@@ -1,9 +1,9 @@
 "use server";
 
-const API_BASE =
-  process.env.NODE_ENV === "production"
-    ? "https://fit-life-api.netlify.app"
-    : (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001");
+// Server Action — calls forgotPassword() from the auth lib directly (same process, no HTTP round-trip).
+// The /api/auth/forgot-password REST route is preserved for the Expo mobile app.
+
+import { forgotPassword } from "@/src/lib/server/auth";
 
 export type ForgotPasswordActionResult =
   | { success: true }
@@ -18,23 +18,10 @@ export async function forgotPasswordAction(
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: trimmed }),
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
-      return {
-        success: false,
-        message: body.message ?? "Нещо се обърка. Опитай отново.",
-      };
-    }
-
+    await forgotPassword(trimmed);
     return { success: true };
-  } catch {
-    return { success: false, message: "Мрежова грешка. Опитай отново." };
+  } catch (err) {
+    console.error("forgotPasswordAction", err);
+    return { success: false, message: "Нещо се обърка. Опитай отново." };
   }
 }

@@ -164,8 +164,7 @@ async function sendPasswordResetEmail(email: string, resetUrl: string): Promise<
 
 function getClientUrl(): string {
   // APP_URL is the canonical env var for the unified full-stack app URL.
-  // Fallback to CLIENT_URL for backward compatibility with older deployments.
-  const appUrl = process.env.APP_URL ?? process.env.CLIENT_URL;
+  const appUrl = process.env.APP_URL;
   if (appUrl) return appUrl.replace(/\/$/, "");
   if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
   throw new Error("APP_URL is not set");
