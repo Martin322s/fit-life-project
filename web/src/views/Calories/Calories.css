@@ -1,0 +1,66 @@
+.dash-sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+.dash-sidebar-close { display: none !important; }
+.cal-page { display: flex; min-height: 100vh; background: var(--c-bg,#080C10); overflow-x: clip; }
+.cal-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: auto; overflow-x: hidden; }
+.cal-content { padding: var(--sp-5) var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-4); }
+.cal-header { padding: var(--sp-4) var(--sp-6); border-bottom: 1px solid var(--c-border,rgba(255,255,255,0.06)); display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); background: var(--c-surface-1,#0E1318); }
+.cal-header-right { display: flex; align-items: center; gap: var(--sp-3); flex-shrink: 0; }
+.cal-streak { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-full); background: rgba(200,255,0,0.08); border: 1px solid rgba(200,255,0,0.2); }
+.cal-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,var(--c-electric,#0066FF),var(--c-acid,#C8FF00)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 0.8rem; font-weight: 700; color: var(--c-bg,#080C10); flex-shrink: 0; }
+.cal-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--color-cream); line-height: 1.15; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-header-sub { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize; }
+.cal-hamburger { display: none; }
+.cal-top-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); }
+.cal-hero-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: var(--sp-4); }
+.cal-bottom-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: var(--sp-4); }
+.cal-three-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
+.cal-two-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+.cal-card { padding: var(--sp-5); }
+.cal-pill { padding: 6px 10px; border-radius: 999px; font-size: 0.72rem; letter-spacing: 0.04em; font-weight: 700; }
+.cal-energy-inner { display: grid; grid-template-columns: minmax(0,320px) 1fr; gap: var(--sp-5); align-items: center; }
+.cal-energy-ring { position: relative; width: 100%; max-width: 220px; margin: 0 auto; }
+.cal-energy-ring svg { display: block; width: 100%; height: auto; }
+.cal-energy-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; pointer-events: none; }
+.cal-quality-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+
+@media (max-width: 1250px) {
+  .cal-top-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cal-hero-grid,
+  .cal-bottom-grid,
+  .cal-three-grid,
+  .cal-two-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .dash-sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; height: 100%;
+    z-index: 300; transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  }
+  .dash-sidebar.dash-sidebar--open {
+    transform: translateX(0);
+    box-shadow: 8px 0 48px rgba(0,0,0,0.85);
+  }
+  .dash-sidebar-close { display: flex !important; }
+  .cal-hamburger {
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 8px 10px; cursor: pointer;
+    color: var(--color-cream); flex-shrink: 0;
+  }
+  .cal-header { padding: var(--sp-3) var(--sp-4); }
+  .cal-content { padding: var(--sp-3) var(--sp-4); }
+  .cal-top-grid { grid-template-columns: 1fr 1fr; }
+  .cal-title { font-size: 1rem !important; }
+  .cal-header-sub { display: none; }
+  .cal-streak { display: none; }
+  .cal-avatar { display: none; }
+  .cal-energy-inner { grid-template-columns: 1fr; }
+  .cal-energy-ring { max-width: 180px; }
+  .cal-quality-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .cal-top-grid { grid-template-columns: 1fr; }
+  .cal-card { padding: var(--sp-4); }
+}
