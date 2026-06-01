@@ -37,6 +37,15 @@ export async function logoutAction() {
   jar.set(TOKEN_COOKIE, "", { maxAge: 0, path: "/" });
 }
 
+/**
+ * Server Action: persist a JWT obtained from the REST auth flow into the
+ * httpOnly cookie. Called by client components after authApi.register() or
+ * other REST auth paths so the cookie is always in sync with localStorage.
+ */
+export async function setAuthCookieAction(token: string) {
+  await setCookieToken(token);
+}
+
 /** Server Action: send a password-reset email. */
 export async function forgotPasswordAction(email: string) {
   await forgotPassword(email);

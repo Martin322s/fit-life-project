@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { authApi, type AuthUser } from "../services/authApi";
+import { logoutAction } from "../app/actions/auth";
 
 type AuthContextType = {
   user: AuthUser | null;
@@ -85,7 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    authApi.logout().catch(() => {});
+    authApi.logout().catch(() => {}); // REST path — stateless, clears localStorage token
+    logoutAction().catch(() => {});   // Server Action — clears httpOnly cookie for middleware
     clearAuth();
     setUser(null);
   }, []);
