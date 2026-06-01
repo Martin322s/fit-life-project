@@ -1,6 +1,6 @@
 # FitLife — Mobile App
 
-Expo / React Native app for iOS, Android, and **web**. Uses file-based routing via Expo Router and communicates with the FitLife unified Next.js app (`client/`) via REST API calls.
+Expo / React Native app for iOS, Android, and **web**. Uses file-based routing via Expo Router and communicates with the FitLife unified Next.js app (`web/`) via REST API calls.
 
 ## Tech Stack
 
@@ -66,7 +66,7 @@ mobile/
 
 The mobile app resolves the API base URL automatically from `src/config/app.config.ts`:
 - **Development**: Expo debugger host (LAN IP of your dev machine), port `3000`.
-- **Production builds**: reads `process.env.NEXT_PUBLIC_API_BASE_URL` set in `client/.env`.
+- **Production builds**: reads `process.env.NEXT_PUBLIC_API_BASE_URL` set in `web/.env`.
 
 No separate `mobile/.env` is required for standard usage. If you need to override the API URL:
 
@@ -131,4 +131,4 @@ Additional detail screens (outside tabs):
 
 - Auth tokens are stored in AsyncStorage. Before a store release, migrate to Expo SecureStore.
 - All user-facing copy is in Bulgarian.
-- The REST API endpoints are hosted by `client/src/app/api/` in the unified Next.js app.
+- The REST API endpoints are hosted by `web/src/app/api/` in the unified Next.js app.

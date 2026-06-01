@@ -24,12 +24,12 @@ Expo mobile  ──[REST /api/*]─────▶  src/app/api/       ──▶
 ## Project Structure
 
 ```text
-client/
+web/
 +-- src/
 |   +-- app/
 |   |   +-- api/          REST API route handlers (35+ endpoints — for Expo mobile app)
 |   |   +-- actions/      Server Actions (auth, profile, catalog, progress — for web)
-|   |   +-- [page]/       Web UI pages (23 pages)
+|   |   +-- [page]/       Web UI pages (22 pages)
 |   +-- db/               Drizzle schema, DB connection, seed scripts
 |   +-- lib/
 |   |   +-- server/       Auth, JWT, repositories, R2 storage, validation helpers
@@ -44,13 +44,13 @@ client/
 +-- drizzle.config.ts     Drizzle Kit configuration
 +-- postcss.config.mjs    Tailwind v4 PostCSS plugin
 +-- public/               Static assets + fitlife-styles-v2.css
-+-- next.config.ts        Next.js configuration (no proxy rewrite — API routes are local)
++-- next.config.ts        Next.js configuration
 +-- netlify.toml          Netlify build configuration
 ```
 
 ## Environment Variables
 
-Copy `../.env.example` to `client/.env` and fill in your values.
+Copy `../.env.example` to `web/.env` and fill in your values.
 
 Required for local development:
 

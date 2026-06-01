@@ -6,9 +6,8 @@ The project is structured as a **Node.js monorepo** with a **unified full-stack 
 
 ```
 fit-life-project/
-+-- client/   Unified full-stack app — Next.js web UI + /api/* route handlers + Drizzle DB
++-- web/      Unified full-stack app — Next.js web UI + /api/* route handlers + Drizzle DB
 +-- mobile/   Mobile app — Expo + React Native
-+-- server/   Legacy standalone API server (reference; not the primary deployment)
 ```
 
 ## Architecture
@@ -18,7 +17,7 @@ fit-life-project/
 The capstone-required architecture is **one Next.js application** that contains both the web frontend and the backend REST API:
 
 ```
-Web browser  ──[Server Actions + same-origin /api/*]──▶  client/ Next.js app
+Web browser  ──[Server Actions + same-origin /api/*]──▶  web/ Next.js app
                                                                │
                                                                ├── src/app/*          (web pages)
                                                                ├── src/app/api/*      (REST API routes)
@@ -54,7 +53,7 @@ Expo mobile  ──[REST /api/* over HTTPS]────────────�
 
 ### Server Actions
 
-Server Actions live in `client/src/app/actions/`. They call the database and auth libraries directly (no HTTP), making them the primary communication channel for the web client:
+Server Actions live in `web/src/app/actions/`. They call the database and auth libraries directly (no HTTP), making them the primary communication channel for the web client:
 
 | Action file | Covers |
 |---|---|
@@ -65,7 +64,7 @@ Server Actions live in `client/src/app/actions/`. They call the database and aut
 
 ### REST API Routes
 
-All REST API routes are in `client/src/app/api/` and are consumed by the Expo mobile app. The web client also falls back to them for operations not yet covered by Server Actions.
+All REST API routes are in `web/src/app/api/` and are consumed by the Expo mobile app. The web client also falls back to them for operations not yet covered by Server Actions.
 
 | Group | Routes |
 |---|---|
@@ -230,14 +229,14 @@ fit-life-project/
 +-- DEPLOYMENT.md                Deployment notes for unified app + mobile
 +-- AGENTS.md                    AI agent instructions
 +-- BACKUP.md                    Backup system guide
-+-- .env.example                 Environment variable reference (copy to client/.env)
++-- .env.example                 Environment variable reference (copy to web/.env)
 +-- .github/workflows/
 |   +-- project-backup.yml       Daily DB + R2 backup to private Cloudflare R2 bucket
-+-- client/                      Unified full-stack Next.js app (primary deployment)
++-- web/                         Unified full-stack Next.js app (primary deployment)
 |   +-- src/app/                 Next.js App Router — web pages + API routes + actions
 |   |   +-- api/                 REST API route handlers (35+ endpoints)
 |   |   +-- actions/             Server Actions (auth, profile, catalog, progress)
-|   |   +-- [page]/page.tsx      Web UI pages (23 pages total)
+|   |   +-- [page]/page.tsx      Web UI pages (22 pages total)
 |   +-- src/db/                  Drizzle schema, DB connection, seed scripts
 |   +-- src/lib/server/          Backend logic: auth, JWT, repositories, storage, validation
 |   +-- src/views/               Feature view implementations
@@ -245,7 +244,7 @@ fit-life-project/
 |   +-- src/components/          Route guards and shared UI components
 |   +-- src/context/             Authentication + theme context
 |   +-- src/hooks/               Data and local state hooks
-|   +-- src/services/            REST API clients (used by legacy web calls + mobile)
+|   +-- src/services/            REST API clients (used by web falls + mobile)
 |   +-- drizzle/                 Generated SQL migration files (0000-0013)
 |   +-- drizzle.config.ts        Drizzle Kit configuration
 |   +-- public/                  Static assets + global stylesheet (fitlife-styles-v2.css)
@@ -253,15 +252,9 @@ fit-life-project/
 |   +-- app/                     Expo Router screens (auth group + tabs group + detail screens)
 |   +-- src/components/          Shared React Native UI primitives
 |   +-- src/context/             Authentication context
-|   +-- src/services/            REST API service wrappers (calls client/ /api/* routes)
+|   +-- src/services/            REST API service wrappers (calls web/ /api/* routes)
 |   +-- src/types/               Shared TypeScript types
 |   +-- src/theme.ts             Dark theme tokens
-+-- server/                      Legacy standalone API server (kept for reference)
-    +-- app/api/                 Original API route handlers
-    +-- db/                      Original schema + seeds (canonical source → copied to client/src/db/)
-    +-- drizzle/                 Migration SQL files (canonical source)
-    +-- lib/                     Original auth, repositories, storage
-    +-- scripts/backups/         Database backup scripts
 ```
 
 ## Local Development Setup
@@ -282,7 +275,7 @@ cd fit-life-project
 ### 1. Unified Next.js App (web + API)
 
 ```bash
-cd client
+cd web
 npm install
 ```
 
@@ -328,7 +321,7 @@ npm run start
 
 Press `a` for Android emulator, `i` for iOS simulator, `w` for Expo web, or scan the QR code with Expo Go.
 
-The mobile app reads `NEXT_PUBLIC_API_BASE_URL` (set in `client/.env`) to reach the API. During development it points to `http://localhost:3000`.
+The mobile app reads `NEXT_PUBLIC_API_BASE_URL` (set in `web/.env`) to reach the API. During development it points to `http://localhost:3000`.
 
 ### Test Accounts
 
@@ -354,7 +347,7 @@ Server Actions in `catalog.ts` expose the same pagination interface for the web 
 The script `src/db/seed-catalog-load.ts` seeds at least **10,000 rows** into `recipes`, `products`, and `training_plans` by generating variations from a curated base dataset.
 
 ```bash
-cd client
+cd web
 npm run db:seed:catalog-load
 # or use the combined command:
 npm run db:seed:full

@@ -16,16 +16,15 @@ Core features include authentication, calorie and meal tracking, hydration, weig
 
 ```text
 fit-life-project/
-+-- client/   Unified full-stack app — Next.js 15 web UI + /api/* REST endpoints + Server Actions
++-- web/      Unified full-stack app — Next.js 15 web UI + /api/* REST endpoints + Server Actions
 +-- mobile/   Mobile app — Expo 54 + React Native 0.81
-+-- server/   Legacy standalone API (reference only — not the primary deployment)
 ```
 
-**Important:** `client/` is the primary and production-intended app. It contains both the web frontend and the backend API. Do not direct new backend work to `server/` — make changes in `client/src/app/api/` and `client/src/lib/server/` instead.
+**Important:** `web/` is the primary and production-intended app. It contains both the web frontend and the backend API. Make all backend changes in `web/src/app/api/` and `web/src/lib/server/`.
 
 ---
 
-## Unified App (`client/`)
+## Unified App (`web/`)
 
 ### Framework & Runtime
 
@@ -44,7 +43,7 @@ fit-life-project/
 ### Directory Layout
 
 ```text
-client/
+web/
 +-- src/
 |   +-- app/
 |   |   +-- api/          REST API route handlers (35+ endpoints)
@@ -74,6 +73,25 @@ client/
 - **Existing web service calls** in `src/services/*Api.ts` use same-origin `/api/*` fetch (no base URL); these are a valid fallback while Server Actions cover more flows.
 - Do **not** add a new `NEXT_PUBLIC_API_BASE_URL` reference for web-only calls — it is reserved for the Expo mobile app.
 
+### Authentication Model
+
+FitLife uses a **dual-layer auth** strategy so both the web app and the mobile app can share the same backend:
+
+| Layer | Web client | Mobile client |
+|---|---|---|
+| Primary login action | `loginAction()` — Server Action | `authApi.login()` — REST |
+| Token storage | httpOnly cookie (`fitlife-token`) set by Server Action | AsyncStorage (bearer token) |
+| Session restore | `AuthContext` reads localStorage token → calls `/api/auth/me` | `AuthContext` reads AsyncStorage → calls `/api/auth/me` |
+| Logout | `logoutAction()` clears cookie + `clearAuth()` clears localStorage | `authApi.logout()` + clear AsyncStorage |
+| SSR protection | `src/middleware.ts` verifies httpOnly cookie before rendering protected pages | Not applicable |
+| API auth | `requireAuth()` in each route handler validates `Authorization: Bearer <token>` | Same — bearer token in header |
+
+**Rules:**
+- `loginAction` / `registerAction` / `logoutAction` / `setAuthCookieAction` are the Server Actions that manage the httpOnly cookie. Call them from web client components.
+- REST routes (`/api/auth/*`) remain unchanged for mobile clients.
+- Never read or write `JWT_SECRET` outside `src/lib/server/jwt.ts` and `src/middleware.ts`.
+- Do not store the JWT in a plain (non-httpOnly) cookie in new code.
+
 ### Backend Conventions
 
 - API route handlers live in `src/app/api/**/route.ts`.
@@ -87,15 +105,18 @@ client/
 
 ### Tailwind CSS
 
-- Tailwind v4 is configured via `postcss.config.mjs` and imported in `src/app/globals.css`.
-- New components should use Tailwind utility classes.
-- Existing CSS-heavy views (`src/views/`) use the legacy `fitlife-styles-v2.css`; migrate to Tailwind progressively without breaking the UI.
-- Theme tokens are defined in the `@theme` block in `globals.css`.
+- **Tailwind CSS v4** is the configured styling system.
+  - Plugin: `@tailwindcss/postcss` in `postcss.config.mjs`.
+  - Base import: `@import "tailwindcss"` in `src/app/globals.css`.
+  - Custom theme tokens (`--color-brand`, `--color-surface`, etc.) defined in the `@theme` block in `globals.css`.
+- **New and updated components** use Tailwind utility classes (e.g., `LoadingScreen`, `CTABanner`, `Team`, `StatsBand`, `Login`).
+- **Existing CSS-heavy views** (`src/views/`) retain the legacy `fitlife-styles-v2.css` loaded via `<link>` in `layout.tsx`; migrate to Tailwind progressively without breaking the UI.
+- Do not add an explicit `tailwind.config.js` — Tailwind v4 uses `postcss.config.mjs` + `globals.css` instead.
 
 ### Client Scripts
 
 ```bash
-cd client
+cd web
 npm install
 npm run dev          # http://localhost:3000 (web + /api/*)
 npm run build
@@ -134,7 +155,7 @@ mobile/
 |   +-- components/          Shared React Native UI primitives
 |   +-- config/              API configuration
 |   +-- context/             AuthContext
-|   +-- services/            API service wrappers (calls client/ /api/* routes)
+|   +-- services/            API service wrappers (calls web/ /api/* routes)
 |   +-- types/               Shared TypeScript interfaces
 |   +-- theme.ts             Design tokens (`C`, `R`)
 ```
@@ -158,10 +179,6 @@ npx expo export --platform web   # Expo web export for static deployment
 ```
 
 ---
-
-## Legacy Server (`server/`)
-
-`server/` is kept for reference. It contains the original standalone API with identical logic to `client/src/lib/server/` and `client/src/app/api/`. For new API work, edit `client/` only. Do not create new routes in `server/`.
 
 ---
 
@@ -194,16 +211,16 @@ npx expo export --platform web   # Expo web export for static deployment
 
 - Do not install new dependencies without flagging and justifying the addition.
 - Prefer existing libraries and local helpers before adding packages.
-- Tailwind CSS v4 is configured in `client/`; do not add it to `mobile/`.
+- Tailwind CSS v4 is configured in `web/`; do not add it to `mobile/`.
 - Do not add global state libraries unless explicitly requested.
 
 ---
 
 ## Safety Rules
 
-- The primary backend is now `client/src/app/api/` and `client/src/lib/server/`. Do not assume `server/` is the active backend.
+- The backend is `web/src/app/api/` and `web/src/lib/server/`. There is no separate `server/` directory.
 - Do not hardcode secrets, API keys, JWT secrets, database URLs, or email credentials.
 - Do not revert unrelated user changes.
 - Do not use `any` types unless there is no reasonable typed alternative.
 - Keep changes scoped to the requested app/module.
-- When changing API contracts, update both the `client/src/app/api/` route and affected `mobile/src/services/` types.
+- When changing API contracts, update both the `web/src/app/api/` route and affected `mobile/src/services/` types.

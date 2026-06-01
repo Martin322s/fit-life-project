@@ -2,10 +2,8 @@
 
 FitLife is deployed as **two surfaces**:
 
-1. `client/` — **Unified full-stack Next.js app** — serves the web UI and all `/api/*` REST endpoints from a single Netlify site. This is the primary deployment target.
+1. `web/` — **Unified full-stack Next.js app** — serves the web UI and all `/api/*` REST endpoints from a single Netlify site. This is the primary deployment target.
 2. `mobile/` — Expo mobile app — Expo Web export (capstone requirement) or Android APK via EAS Build (optional).
-
-The `server/` directory is a legacy standalone API that is kept for reference. It is **not** the primary deployment.
 
 All user-facing copy is in Bulgarian. Never commit real `.env` files.
 
@@ -15,7 +13,7 @@ All user-facing copy is in Bulgarian. Never commit real `.env` files.
 
 ```
 Netlify (single site: fitlife-com.netlify.app)
-  └── client/ Next.js 15 app
+  └── web/ Next.js 15 app
        ├── Web pages  (/, /dashboard, /recipes, ...)
        ├── API routes (/api/auth/*, /api/meals/*, /api/recipes/*, ...)
        ├── Server Actions (auth, profile, catalog, progress)
@@ -30,9 +28,9 @@ Expo Web / EAS Build
 
 ## Environment Variables
 
-### Unified App (`client/.env`)
+### Unified App (`web/.env`)
 
-Copy `.env.example` from the project root to `client/.env` and fill in your values:
+Copy `.env.example` from the project root to `web/.env` and fill in your values:
 
 ```env
 # Database
@@ -94,14 +92,14 @@ The API base URL is resolved automatically in `mobile/src/config/app.config.ts`.
 ### 1. Install dependencies
 
 ```bash
-cd client && npm install
+cd web && npm install
 cd ../mobile && npm install
 ```
 
 ### 2. Configure the unified app
 
 ```bash
-cd client
+cd web
 cp ../.env.example .env
 # Edit .env — fill in DATABASE_URL, JWT_SECRET, APP_URL, etc.
 ```
@@ -116,7 +114,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
 ### 3. Prepare the database
 
 ```bash
-cd client
+cd web
 npm run db:migrate
 npm run db:seed
 npm run db:seed:full   # seeds all catalogs + 10,000+ rows
@@ -126,7 +124,7 @@ npm run db:seed:full   # seeds all catalogs + 10,000+ rows
 
 ```bash
 # Terminal 1 — unified app on http://localhost:3000 (web + /api/*)
-cd client && npm run dev
+cd web && npm run dev
 
 # Terminal 2 — mobile app (optional)
 cd mobile && npm run start
@@ -140,14 +138,14 @@ Press `a` for Android emulator, `i` for iOS simulator, `w` for Expo web, or scan
 
 ### Unified App — Netlify
 
-The `client/` directory deploys as one Next.js Netlify site. Both the web UI and `/api/*` routes are served from this single deployment.
+The `web/` directory deploys as one Next.js Netlify site. Both the web UI and `/api/*` routes are served from this single deployment.
 
 1. Create a Neon PostgreSQL database.
 2. In Netlify → **Site configuration → Environment variables**, add all variables from the table above.
-3. Set **Base directory** to `client/` and **Build command** to `npm run build`.
+3. Set **Base directory** to `web/` and **Build command** to `npm run build`.
 4. After first deploy, run migrations and seeds pointing at the production DB:
    ```bash
-   cd client
+   cd web
    npm run db:migrate
    npm run db:seed:full
    ```
@@ -205,7 +203,7 @@ The build URL and QR code appear in the EAS dashboard and are linked in `README.
 After deploying the unified Netlify site:
 
 1. Register a new user at the live web URL.
-2. Log in — session token is stored as an httpOnly cookie (Server Action) or localStorage (REST fallback).
+2. Log in — session token is stored as an httpOnly cookie (Server Action) or bearer token in localStorage (REST fallback for mobile-compatible web flows).
 3. Refresh `/dashboard` — confirm session is restored.
 4. Log out.
 5. Use "Forgot password" — confirm the reset email arrives and the link uses the correct `APP_URL` domain.
@@ -251,4 +249,3 @@ See [BACKUP.md](./BACKUP.md) for full details and restore instructions.
 - Admin panel is web-only; the mobile app has no admin interface.
 - Mobile stores JWT in AsyncStorage (migrate to Expo SecureStore before a store release).
 - `pg_trgm` full-text search indexes require the extension (enabled by default on Neon; on self-hosted PostgreSQL run `CREATE EXTENSION IF NOT EXISTS pg_trgm;` once).
-- The `server/` directory is kept for reference but is not deployed separately in the production-intended architecture.
