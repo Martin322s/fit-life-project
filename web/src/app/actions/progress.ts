@@ -26,7 +26,11 @@ export async function createProgressAction(data: { weightKg?: number; waistCm?: 
   return repo.create(userId, data);
 }
 
-/** Server Action: delete a progress entry by ID. */
+/** Server Action: delete a progress entry by ID (only the owning user may delete it). */
 export async function deleteProgressAction(id: string) {
+  const { sub: userId } = await requireUser();
+  const entry = await repo.findById(id);
+  if (!entry) return false;
+  if (entry.userId !== userId) throw new Error("Forbidden");
   return repo.remove(id);
 }
